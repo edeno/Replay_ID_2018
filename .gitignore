@@ -1,3 +1,17 @@
+#DR
+.Raw-Data/
+
+# Data Files
+*.mat
+*.nc
+
+# Mac
+.DS_Store
+
+# Log files
+*.log
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -8,6 +22,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+env/
 build/
 develop-eggs/
 dist/
@@ -78,10 +93,11 @@ celerybeat-schedule
 # SageMath parsed files
 *.sage.py
 
-# Environments
+# dotenv
 .env
+
+# virtualenv
 .venv
-env/
 venv/
 ENV/
 
@@ -97,3 +113,4 @@ ENV/
 
 # mypy
 .mypy_cache/
+*.mp4
