@@ -4,11 +4,11 @@ channels:
 - defaults
 - edeno
 dependencies:
-- "python >= 3.5"
+- "python >= 3.6"
 - loren_frank_data_processing
 - ripple_detection
 - replay_classification
-- spectral_connectivity
+- replay_identification
 - jupyter
 - setuptools
 - "pytest >= 2.7.1"
