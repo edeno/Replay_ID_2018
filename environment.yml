@@ -12,6 +12,7 @@ dependencies:
 - seaborn
 - loren_frank_data_processing
 - ripple_detection
+- spectral_connectivity
 - replay_identification
 - replay_classification
 - jupyter
