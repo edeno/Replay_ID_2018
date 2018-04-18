@@ -5,10 +5,15 @@ channels:
 - edeno
 dependencies:
 - "python >= 3.6"
+- numpy
+- scipy
+- pandas
+- xarray
+- seaborn
 - loren_frank_data_processing
 - ripple_detection
-- replay_classification
 - replay_identification
+- replay_classification
 - jupyter
 - setuptools
 - "pytest >= 2.7.1"
