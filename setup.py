@@ -10,7 +10,7 @@ TESTS_REQUIRE = ['pytest >= 2.7.1']
 setup(
     name='replay_id_2018',
     version='0.1.0.dev0',
-    license='GPL-3.0',
+    license='MIT',
     description=('Analysis of replays identified from different sources.'),
     author='Eric Denovellis, Long Tao',
     author_email='edeno@bu.edu, longtao2@bu.edu',
