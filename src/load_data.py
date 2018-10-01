@@ -15,7 +15,7 @@ logger = getLogger(__name__)
 
 
 def get_ripple_labels(ripple_times, time):
-    ripple_labels = pd.Series(np.zeros_like(time), index=time)
+    ripple_labels = pd.Series(np.zeros_like(time, dtype=np.int), index=time)
     for ripple_number, start_time, end_time in ripple_times.itertuples():
         ripple_labels.loc[start_time:end_time] = ripple_number
 
