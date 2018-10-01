@@ -56,7 +56,7 @@ def get_replay_times(results, probability_threshold=0.8,
 
 def summarize_replays(replay_info, detector_results, decoder_results, data):
     MOTION_BOUNDS = [-np.inf, -50, 50, np.inf]
-    
+
     replay_position_info = (data['position_info']
                             .loc[replay_info.start_time]
                             .set_index(replay_info.index))
@@ -121,7 +121,7 @@ def summarize_replays(replay_info, detector_results, decoder_results, data):
 def _get_test_spikes(data, labels, replay_number, sampling_frequency):
     test_spikes = data['spikes'][labels.replay_number == replay_number].T
     n_time = test_spikes.shape[1]
-    time = pd.TimeDeltaIndex(np.arange(0, n_time) / sampling_frequency,
+    time = pd.TimedeltaIndex(np.arange(0, n_time) / sampling_frequency,
                              unit='s')
     return test_spikes, time
 

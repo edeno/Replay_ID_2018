@@ -3,8 +3,8 @@ from src.load_data import load_data
 from src.parameters import ANIMALS, SAMPLING_FREQUENCY
 from src.save_data import (save_detector_parameters, save_replay_data,
                            save_ripple_data)
-from src.summarize_replays import (decode_replays, get_replay_times,
-                                   summarize_replays)
+from src.summarize_replay import (decode_replays, get_replay_times,
+                                  summarize_replays)
 
 if __name__ == '__main__':
     epoch_key = ('bon', 3, 2)
