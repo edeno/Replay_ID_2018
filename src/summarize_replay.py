@@ -126,22 +126,18 @@ def _get_test_spikes(data, labels, replay_number, sampling_frequency):
     return test_spikes, time
 
 
-def decode_replays(data, detector, labels, replay_info, sampling_frequency):
-    is_training = ((data['position_info'].linear_speed > 4) &
-                   data['position_info'].is_correct)
-    train_position_info = data['position_info'].loc[is_training]
-    train_spikes = data['spikes'][is_training]
+def decode_replays(data, replay_detector, is_replay, replay_info,
+                   sampling_frequency):
 
     decoder = SortedSpikeDecoder(
-        position=train_position_info.linear_distance.values,
-        lagged_position=train_position_info.lagged_linear_distance.values,
-        trajectory_direction=train_position_info.task.values,
-        spikes=train_spikes.T,
-        replay_speedup_factor=detector.replay_speed,
-        n_position_bins=detector.place_bin_centers.size,
-        confidence_threshold=0.8,
-        knot_spacing=detector.spike_model_knot_spacing,
-    ).fit()
+        replay_speedup_factor=replay_detector.replay_speed,
+        knot_spacing=replay_detector.spike_model_knot_spacing,
+        spike_model_penalty=replay_detector.spike_model_penalty
+    ).fit(
+        position=data['position_info'].linear_distance.values,
+        trajectory_direction=data['position_info'].task.values,
+        spikes=data['spikes'],
+        is_training=(is_replay.replay_number == 0))
 
     decoder_results = [
         decoder.predict(*_get_test_spikes(data, labels, replay_number,

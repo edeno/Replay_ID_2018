@@ -42,7 +42,6 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
     logger.info('Loading Data...')
     position_info = (
         get_interpolated_position_dataframe(epoch_key, animals)
-        .assign(lagged_linear_distance=lambda df: df.linear_distance.shift(1))
         .dropna(subset=['linear_distance', 'linear_speed']))
 
     speed = position_info.linear_speed
