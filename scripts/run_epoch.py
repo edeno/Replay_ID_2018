@@ -1,3 +1,4 @@
+import itertools
 from replay_identification import ReplayDetector
 from src.load_data import load_data
 from src.parameters import ANIMALS, SAMPLING_FREQUENCY
