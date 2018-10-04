@@ -108,7 +108,8 @@ def summarize_replays(replay_info, detector_results, decoder_results, data):
 
     detector_posterior = (xr.concat(detector_posterior, dim=replay_info.index)
                           .rename('detector_posterior'))
-    detector_likelihood = (xr.concat(detector_likelihood, dim=replay_info.index)
+    detector_likelihood = (xr.concat(
+        detector_likelihood, dim=replay_info.index)
                            .rename('detector_likelihood'))
     decoder_posterior = (xr.concat(decoder_posterior, dim=replay_info.index)
                          .rename('decoder_posterior'))
