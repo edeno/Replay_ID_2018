@@ -167,7 +167,7 @@ def _get_replay_motion(replay_info, posterior_density):
     replay_distance_from_animal_position = np.abs(
         replay_position - replay_info.linear_distance)
     slope = linregress(
-        posterior_density.get_index('time').values,
+        posterior_density.get_index('time').total_seconds().values,
         replay_distance_from_animal_position).slope
     return slope
 
