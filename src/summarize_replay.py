@@ -118,9 +118,9 @@ def summarize_replays(replay_info, detector_results, decoder_results, data):
     return replay_info, replay_densities
 
 
-def _get_test_spikes(data, labels, replay_number, sampling_frequency):
-    test_spikes = data['spikes'][labels.replay_number == replay_number].T
-    n_time = test_spikes.shape[1]
+def _get_test_spikes(data, is_replay, replay_number, sampling_frequency):
+    test_spikes = data['spikes'][is_replay.replay_number == replay_number]
+    n_time = test_spikes.shape[0]
     time = pd.TimedeltaIndex(np.arange(0, n_time) / sampling_frequency,
                              unit='s')
     return test_spikes, time
@@ -140,7 +140,7 @@ def decode_replays(data, replay_detector, is_replay, replay_info,
         is_training=(is_replay.replay_number == 0))
 
     decoder_results = [
-        decoder.predict(*_get_test_spikes(data, labels, replay_number,
+        decoder.predict(*_get_test_spikes(data, is_replay, replay_number,
                                           sampling_frequency))
         for replay_number in replay_info.index]
 
