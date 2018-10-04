@@ -102,7 +102,7 @@ def summarize_replays(replay_info, detector_results, decoder_results, data):
     replay_info['replay_motion_slope'] = motion_slope
     replay_info['replay_motion_type'] = pd.cut(
         replay_info['replay_motion_slope'], MOTION_BOUNDS,
-        labels=['Away', 'Neither', 'Towards'])
+        labels=['Towards', 'Neither', 'Away'])
     replay_info['replay_movement_distance'] = replay_movement_distance
     replay_info['credible_interval_size'] = credible_interval_size
 
@@ -158,7 +158,7 @@ def _get_replay_motion(replay_info, posterior_density):
     Returns
     -------
     slope : float
-        Negative is Away, Positive is Towards
+        Negative is Towards, Positive is Away
 
     '''
     posterior_density = posterior_density.dropna('time')
