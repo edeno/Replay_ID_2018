@@ -76,9 +76,9 @@ def summarize_replays(replay_info, detector_results, decoder_results, data):
         cur_detector_results = (
             detector_results.sel(time=slice(r.start_time, r.end_time))
             .assign_coords(time=lambda da: da.time - r.start_time))
-        density = cur_detector_results.replay_posterior
+        density = dr.results.posterior_density.sum('state') / 4
 
-        detector_posterior.append(density)
+        detector_posterior.append(cur_detector_results.replay_posterior)
         detector_likelihood.append(cur_detector_results.likelihood)
 
         # Get decoder posterior
