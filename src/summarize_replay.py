@@ -54,7 +54,8 @@ def get_replay_times(results, probability_threshold=0.8,
     return replay_times, labels
 
 
-def summarize_replays(replay_info, detector_results, decoder_results, data):
+def summarize_replays(replay_info, detector_results, decoder_results, data,
+                      position_metric='linear_distance'):
     MOTION_BOUNDS = [-np.inf, -50, 50, np.inf]
 
     replay_position_info = (data['position_info']
@@ -89,7 +90,7 @@ def summarize_replays(replay_info, detector_results, decoder_results, data):
         replay_type_confidence.append(dr.predicted_state_probability())
 
         # Replay Motion
-        motion_slope.append(_get_replay_motion(r, density))
+        motion_slope.append(_get_replay_motion(r, density, position_metric))
 
         # How far replay moves
         replay_movement_distance.append(_get_replay_movement(density))
@@ -128,14 +129,14 @@ def _get_test_spikes(data, is_replay, replay_number, sampling_frequency):
 
 
 def decode_replays(data, replay_detector, is_replay, replay_info,
-                   sampling_frequency):
+                   sampling_frequency, position_metric='linear_distance'):
 
     decoder = SortedSpikeDecoder(
         replay_speedup_factor=replay_detector.replay_speed,
         knot_spacing=replay_detector.spike_model_knot_spacing,
         spike_model_penalty=replay_detector.spike_model_penalty
     ).fit(
-        position=data['position_info'].linear_distance.values,
+        position=data['position_info'][position_metric].values,
         trajectory_direction=data['position_info'].task.values,
         spikes=data['spikes'],
         is_training=(is_replay.replay_number == 0))
@@ -148,7 +149,8 @@ def decode_replays(data, replay_detector, is_replay, replay_info,
     return decoder_results, decoder
 
 
-def _get_replay_motion(replay_info, posterior_density):
+def _get_replay_motion(replay_info, posterior_density,
+                       position_metric='linear_distance'):
     '''
 
     Parameters
@@ -166,7 +168,7 @@ def _get_replay_motion(replay_info, posterior_density):
     replay_position = posterior_density.position.values[
         np.log(posterior_density).argmax('position').values]
     replay_distance_from_animal_position = np.abs(
-        replay_position - replay_info.linear_distance)
+        replay_position - replay_info[position_metric])
     slope = linregress(
         posterior_density.get_index('time').total_seconds().values,
         replay_distance_from_animal_position).slope
