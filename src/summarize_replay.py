@@ -130,6 +130,11 @@ def _get_test_spikes(data, is_replay, replay_number, sampling_frequency):
 
 def decode_replays(data, replay_detector, is_replay, replay_info,
                    sampling_frequency, position_metric='linear_distance'):
+    initial_conditions = {
+        'linear_distance': 'Inbound-Outbound',
+        'linear_position': 'Uniform',
+        'linear_position2': 'Uniform',
+    }
 
     decoder = SortedSpikeDecoder(
         replay_speedup_factor=replay_detector.replay_speed,
@@ -139,7 +144,8 @@ def decode_replays(data, replay_detector, is_replay, replay_info,
         position=data['position_info'][position_metric].values,
         trajectory_direction=data['position_info'].task.values,
         spikes=data['spikes'],
-        is_training=(is_replay.replay_number == 0))
+        is_training=(is_replay.replay_number == 0),
+        initial_conditions=initial_conditions[position_metric])
 
     decoder_results = [
         decoder.predict(*_get_test_spikes(data, is_replay, replay_number,
