@@ -116,3 +116,4 @@ ENV/
 *.mp4
 *.pkl
 *.joblib
+*.gz
