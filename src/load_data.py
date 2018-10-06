@@ -20,7 +20,8 @@ _MARKS = ['channel_1_max', 'channel_2_max', 'channel_3_max', 'channel_4_max']
 
 
 def get_ripple_labels(ripple_times, time):
-    ripple_labels = pd.Series(np.zeros_like(time, dtype=np.int), index=time)
+    ripple_labels = pd.Series(np.zeros_like(time, dtype=np.int), index=time,
+                              name='ripple_number')
     for ripple_number, start_time, end_time in ripple_times.itertuples():
         ripple_labels.loc[start_time:end_time] = ripple_number
 
