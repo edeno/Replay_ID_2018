@@ -2,8 +2,7 @@ import itertools
 from replay_identification import ReplayDetector
 from src.load_data import load_data
 from src.parameters import ANIMALS, SAMPLING_FREQUENCY
-from src.save_data import (save_detector_parameters, save_replay_data,
-                           save_ripple_data)
+from src.save_data import (save_replay_data, save_ripple_data)
 from src.summarize_replay import (decode_replays, get_replay_times,
                                   summarize_replays)
 
@@ -38,7 +37,6 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
                          is_replay)
 
     save_ripple_data(epoch_key, data)
-    save_detector_parameters(epoch_key, replay_detector)
 
 
 if __name__ == '__main__':
