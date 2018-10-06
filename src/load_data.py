@@ -16,6 +16,8 @@ from src.parameters import PROCESSED_DATA_DIR
 
 logger = getLogger(__name__)
 
+_MARKS = ['channel_1_max', 'channel_2_max', 'channel_3_max', 'channel_4_max']
+
 
 def get_ripple_labels(ripple_times, time):
     ripple_labels = pd.Series(np.zeros_like(time, dtype=np.int), index=time)
@@ -74,7 +76,9 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
     if 'multiunit' in data_types:
         tetrode_keys = tetrode_info[(tetrode_info.numcells > 0)].index
         multiunit = (get_all_multiunit_indicators(tetrode_keys, animals)
-                     .reindex(time)).values
+                     .sel(features=_MARKS)
+                     .reindex({'time': time})
+                     .values)
     else:
         multiunit = None
 
