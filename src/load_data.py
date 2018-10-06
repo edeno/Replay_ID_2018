@@ -1,7 +1,9 @@
 from logging import getLogger
+from os.path import join
 
 import numpy as np
 import pandas as pd
+from sklearn.externals import joblib
 
 from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          get_all_spike_indicators,
@@ -10,6 +12,7 @@ from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          make_tetrode_dataframe)
 from ripple_detection import Kay_ripple_detector
 from spectral_connectivity import Connectivity, Multitaper
+from src.parameters import PROCESSED_DATA_DIR
 
 logger = getLogger(__name__)
 
@@ -91,3 +94,9 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
         'spikes': spikes,
         'multiunit': multiunit,
     }
+
+
+def load_detector(epoch_key):
+    animal, day, epoch = epoch_key
+    file_name = f'{animal}_{day:02}_{epoch:02}_replay_detector.gz'
+    return joblib.load(join(PROCESSED_DATA_DIR, file_name))
