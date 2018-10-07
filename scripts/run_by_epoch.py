@@ -1,5 +1,9 @@
 import itertools
 import logging
+from argparse import ArgumentParser
+from signal import SIGUSR1, SIGUSR2, signal
+from subprocess import PIPE, run
+from sys import exit
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
@@ -59,6 +63,47 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         save_overlap(overlap, epoch_key, name1, name2)
 
 
-if __name__ == '__main__':
-    epoch_key = ('bon', 3, 2)
+def get_command_line_arguments():
+    parser = ArgumentParser()
+    parser.add_argument('Animal', type=str, help='Short name of animal')
+    parser.add_argument('Day', type=int, help='Day of recording session')
+    parser.add_argument('Epoch', type=int,
+                        help='Epoch number of recording session')
+    parser.add_argument(
+        '-d', '--debug',
+        help='More verbose output for debugging',
+        action='store_const',
+        dest='log_level',
+        const=logging.DEBUG,
+        default=logging.INFO,
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = get_command_line_arguments()
+    FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    logging.basicConfig(format=FORMAT, level=args.log_level)
+
+    def _signal_handler(signal_code, frame):
+        logging.error('***Process killed with signal {signal}***'.format(
+            signal=signal_code))
+        exit()
+
+    for code in [SIGUSR1, SIGUSR2]:
+        signal(code, _signal_handler)
+
+    epoch_key = (args.Animal, args.Day, args.Epoch)
+    logging.info(
+        'Processing epoch: Animal {0}, Day {1}, Epoch #{2}...'.format(
+            *epoch_key))
+    git_hash = run(['git', 'rev-parse', 'HEAD'],
+                   stdout=PIPE, universal_newlines=True).stdout
+    logging.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
+
+    # Analysis Code
     run_analysis(epoch_key, ANIMALS, SAMPLING_FREQUENCY, USE_LIKELIHOODS)
+
+
+if __name__ == '__main__':
+    exit(main())
