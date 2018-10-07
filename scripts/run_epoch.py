@@ -46,4 +46,4 @@ if __name__ == '__main__':
         'spikes': ['spikes'],
         'spikes_and_lfp_power': ['spikes', 'lfp_power']
     }
-    run_analysis(epoch_key, ANIMALS, SAMPLING_FREQUENCY, use_likelihoods)
+    run_analysis(epoch_key, ANIMALS, SAMPLING_FREQUENCY, USE_LIKELIHOODS)

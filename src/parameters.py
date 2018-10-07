@@ -1,4 +1,5 @@
-from os.path import join, abspath, dirname, pardir
+from collections import OrderedDict
+from os.path import abspath, dirname, join, pardir
 
 from loren_frank_data_processing import Animal
 
@@ -18,3 +19,9 @@ ANIMALS = {
     'Cor': Animal(directory=join(RAW_DATA_DIR, 'CorrianderData'),
                   short_name='Cor'),
 }
+
+USE_LIKELIHOODS = OrderedDict(
+    [('lfp_power', ['lfp_power']),
+     ('spikes', ['spikes']),
+     ('spikes_and_lfp_power', ['spikes', 'lfp_power'])]
+)
