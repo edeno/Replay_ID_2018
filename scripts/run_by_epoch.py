@@ -10,7 +10,8 @@ from src.load_data import load_data
 from src.parameters import ANIMALS, SAMPLING_FREQUENCY, USE_LIKELIHOODS
 from src.save_data import save_overlap, save_replay_data, save_ripple_data
 from src.summarize_replay import (compare_overlap, decode_replays,
-                                  get_replay_times, summarize_replays)
+                                  get_replay_times, summarize_replays,
+                                  add_epoch_info_to_dataframe)
 
 
 def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
@@ -44,6 +45,8 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
             replay_info, detector_results, decoder_results, data,
             position_metric)
 
+        add_epoch_info_to_dataframe(replay_info, epoch_key)
+
         # Save Data
         save_replay_data(name, epoch_key, replay_info, replay_densities,
                          is_replay)
@@ -51,6 +54,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         labels.append(is_replay.replay_number)
         infos.append(replay_info)
 
+    add_epoch_info_to_dataframe(replay_info, epoch_key)
     save_ripple_data(epoch_key, data)
     names.append('ripples')
     labels.append(data['ripple_labels'])

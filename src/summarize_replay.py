@@ -249,3 +249,12 @@ def compare_overlap(labels1, labels2, info1, info2):
         time_difference[:, 1] / np.timedelta64(1, 's'))
 
     return overlap_labels
+
+
+def add_epoch_info_to_dataframe(df, epoch_key):
+    animal, day, epoch = epoch_key
+    df['animal'] = animal
+    df['day'] = day
+    df['epoch'] = epoch
+
+    return df
