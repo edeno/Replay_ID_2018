@@ -1,17 +1,17 @@
 import itertools
 import logging
+import sys
 from argparse import ArgumentParser
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
-from sys import exit
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
 from src.parameters import ANIMALS, SAMPLING_FREQUENCY, USE_LIKELIHOODS
 from src.save_data import save_overlap, save_replay_data, save_ripple_data
-from src.summarize_replay import (compare_overlap, decode_replays,
-                                  get_replay_times, summarize_replays,
-                                  add_epoch_info_to_dataframe)
+from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
+                                  decode_replays, get_replay_times,
+                                  summarize_replays)
 
 
 def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
@@ -110,4 +110,4 @@ def main():
 
 
 if __name__ == '__main__':
-    exit(main())
+    sys.exit(main())
