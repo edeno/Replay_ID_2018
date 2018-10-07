@@ -54,7 +54,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         labels.append(is_replay.replay_number)
         infos.append(replay_info)
 
-    add_epoch_info_to_dataframe(replay_info, epoch_key)
+    add_epoch_info_to_dataframe(data['ripple_times'], epoch_key)
     save_ripple_data(epoch_key, data)
     names.append('ripples')
     labels.append(data['ripple_labels'])
