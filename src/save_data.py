@@ -24,3 +24,8 @@ def save_detector_parameters(epoch_key, replay_detector):
     animal, day, epoch = epoch_key
     file_name = f'{animal}_{day:02}_{epoch:02}_replay_detector.gz'
     replay_detector.save_model(join(PROCESSED_DATA_DIR, file_name))
+
+
+def save_overlap(overlap, epoch_key, name1, name2):
+    save_xarray(PROCESSED_DATA_DIR, epoch_key,
+                overlap.to_xarray(), f'/overlap/{name1}/{name2}')
