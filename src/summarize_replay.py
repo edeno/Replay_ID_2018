@@ -8,6 +8,7 @@ from scipy.ndimage.measurements import label
 from scipy.stats import linregress
 
 from replay_classification import SortedSpikeDecoder
+from loren_frank_data_processing import reshape_to_segments
 
 logger = getLogger(__name__)
 
@@ -120,14 +121,6 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     return replay_info, replay_densities
 
 
-def _get_test_spikes(data, is_replay, replay_number, sampling_frequency):
-    test_spikes = data['spikes'][is_replay.replay_number == replay_number]
-    n_time = test_spikes.shape[0]
-    time = pd.TimedeltaIndex(np.arange(0, n_time) / sampling_frequency,
-                             unit='s')
-    return test_spikes, time
-
-
 def decode_replays(data, replay_detector, is_replay, replay_info,
                    sampling_frequency, position_metric='linear_distance'):
     initial_conditions = {
@@ -143,13 +136,17 @@ def decode_replays(data, replay_detector, is_replay, replay_info,
     ).fit(
         position=data['position_info'][position_metric].values,
         trajectory_direction=data['position_info'].task.values,
-        spikes=data['spikes'],
-        is_training=(is_replay.replay_number == 0),
+        spikes=data['spikes'].values,
+        is_training=(is_replay.replay_number == 0).values,
         initial_conditions=initial_conditions[position_metric])
 
+    test_spikes = reshape_to_segments(
+        data['spikes'], replay_info.loc[:, ['start_time', 'end_time']],
+        sampling_frequency=sampling_frequency)
+
     decoder_results = [
-        decoder.predict(*_get_test_spikes(data, is_replay, replay_number,
-                                          sampling_frequency))
+        decoder.predict(test_spikes.loc[replay_number].values,
+                        test_spikes.loc[replay_number].index)
         for replay_number in replay_info.index]
 
     return decoder_results, decoder

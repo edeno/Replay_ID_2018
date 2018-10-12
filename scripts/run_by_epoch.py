@@ -19,11 +19,21 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
     data_types = set(itertools.chain(*use_likelihoods.values()))
     data = load_data(epoch_key, animals, sampling_frequency, data_types)
 
+    if data['spikes'] is None:
+        s = data['spikes']
+    else:
+        s = data['spikes'].values
+
+    if data['multiunit'] is None:
+        m = data['multiunit']
+    else:
+        m = data['multiunit'].values
+
     replay_detector = ReplayDetector()
     replay_detector.fit(
-        data['is_ripple'], data['position_info'].speed.values,
+        data['is_ripple'].values, data['position_info'].speed.values,
         data['position_info'][position_metric].values, data['power'],
-        data['spikes'], data['multiunit'])
+        s, m)
 
     names = []
     labels = []
@@ -34,8 +44,8 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         detector_results = replay_detector.predict(
             data['position_info'].speed.values,
             data['position_info'][position_metric].values, data['power'],
-            data['spikes'], data['multiunit'],
-            time=data['position_info'].index, use_likelihoods=likelihoods)
+            s, m, time=data['position_info'].index,
+            use_likelihoods=likelihoods)
 
         replay_info, is_replay = get_replay_times(detector_results)
         decoder_results, _ = decode_replays(

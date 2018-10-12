@@ -70,7 +70,7 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
         neuron_info = neuron_info[(neuron_info.numspikes > 0) &
                                   (neuron_info.type == 'principal')]
         spikes = (get_all_spike_indicators(neuron_info.index, animals)
-                  .reindex(time)).values
+                  .reindex(time))
     else:
         spikes = None
 
@@ -78,8 +78,7 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
         tetrode_keys = tetrode_info[(tetrode_info.numcells > 0)].index
         multiunit = (get_all_multiunit_indicators(tetrode_keys, animals)
                      .sel(features=_MARKS)
-                     .reindex({'time': time})
-                     .values)
+                     .reindex({'time': time}))
     else:
         multiunit = None
 
