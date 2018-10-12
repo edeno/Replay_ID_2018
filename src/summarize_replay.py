@@ -234,12 +234,10 @@ def compare_overlap(labels1, labels2, info1, info2):
                       .join(overlap_labels2)
                       .assign(**percentage_overlap))
 
-    start_time1 = (info1
-                   .loc[overlap_labels.index.get_level_values(0).values,
-                        ['start_time', 'end_time']])
-    start_time2 = (info2
-                   .loc[overlap_labels.index.get_level_values(1).values,
-                        ['start_time', 'end_time']])
+    start_time1 = (info1.loc[overlap_labels.index.get_level_values(0).values,
+                             ['start_time', 'end_time']])
+    start_time2 = (info2.loc[overlap_labels.index.get_level_values(1).values,
+                             ['start_time', 'end_time']])
 
     time_difference = (start_time1.values - start_time2.values)
 
