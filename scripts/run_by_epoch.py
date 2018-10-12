@@ -76,8 +76,9 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
     for (labels1, info1, name1), (labels2, info2, name2) in combination:
         logging.info(
             f'Analyzing replay overlap between {name1} and {name2}...')
-        overlap = compare_overlap(labels1, labels2, info1, info2)
-        save_overlap(overlap, epoch_key, name1, name2)
+        overlap_info = compare_overlap(labels1, labels2, info1, info2)
+        add_epoch_info_to_dataframe(overlap_info, epoch_key)
+        save_overlap(overlap_info, epoch_key, name1, name2)
     logging.info('Done...')
 
 
