@@ -48,9 +48,11 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
             use_likelihoods=likelihoods)
 
         replay_info, is_replay = get_replay_times(detector_results)
+        logging.info(f'Classifying replays with {name}...')
         decoder_results, _ = decode_replays(
             data, replay_detector, is_replay, replay_info, sampling_frequency,
             position_metric)
+        logging.info(f'Summarizing replays with {name}...')
         replay_info, replay_densities = summarize_replays(
             replay_info, detector_results, decoder_results, data,
             position_metric)
@@ -72,9 +74,11 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
 
     combination = itertools.combinations(zip(labels, infos, names), 2)
     for (labels1, info1, name1), (labels2, info2, name2) in combination:
-        logging.info(f'Analyzing overlap between {name1} and {name2}...')
+        logging.info(
+            f'Analyzing replay overlap between {name1} and {name2}...')
         overlap = compare_overlap(labels1, labels2, info1, info2)
         save_overlap(overlap, epoch_key, name1, name2)
+    logging.info('Done...')
 
 
 def get_command_line_arguments():
