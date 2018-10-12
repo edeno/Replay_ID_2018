@@ -116,7 +116,8 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     decoder_posterior = (xr.concat(decoder_posterior, dim=replay_info.index)
                          .rename('decoder_posterior'))
     replay_densities = xr.merge(
-        (detector_posterior, detector_likelihood, decoder_posterior))
+        (detector_posterior, detector_likelihood, decoder_posterior),
+        join='inner')
 
     return replay_info, replay_densities
 
