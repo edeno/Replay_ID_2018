@@ -8,7 +8,7 @@ from subprocess import PIPE, run
 from replay_identification import ReplayDetector
 from src.load_data import load_data
 from src.parameters import ANIMALS, SAMPLING_FREQUENCY, USE_LIKELIHOODS
-from src.save_data import save_overlap, save_replay_data, save_ripple_data
+from src.save_data import save_overlap, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
                                   summarize_replays)
@@ -31,7 +31,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
 
     replay_detector = ReplayDetector()
     replay_detector.fit(
-        data['is_ripple'].values, data['position_info'].speed.values,
+        data['is_ripple'].values.squeeze(), data['position_info'].speed.values,
         data['position_info'][position_metric].values, data['power'],
         s, m)
 
@@ -41,11 +41,16 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
 
     for name, likelihoods in use_likelihoods.items():
         logging.info(f'Finding replays with {name}...')
-        detector_results = replay_detector.predict(
-            data['position_info'].speed.values,
-            data['position_info'][position_metric].values, data['power'],
-            s, m, time=data['position_info'].index,
-            use_likelihoods=likelihoods)
+        if name != 'ripple':
+            detector_results = replay_detector.predict(
+                data['position_info'].speed.values,
+                data['position_info'][position_metric].values, data['power'],
+                s, m, time=data['position_info'].index,
+                use_likelihoods=likelihoods)
+            replay_info, is_replay = get_replay_times(detector_results)
+        else:
+            replay_info = data['ripple_times'].copy()
+            is_replay = data['ripple_labels'].copy()
 
         logging.info(f'Classifying replays with {name}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key, name)
@@ -63,12 +68,6 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         names.append(name)
         labels.append(is_replay.replay_number)
         infos.append(replay_info)
-
-    add_epoch_info_to_dataframe(data['ripple_times'], epoch_key)
-    save_ripple_data(epoch_key, data)
-    names.append('ripples')
-    labels.append(data['ripple_labels'])
-    infos.append(data['ripple_times'])
 
     combination = itertools.combinations(zip(labels, infos, names), 2)
     for (labels1, info1, name1), (labels2, info2, name2) in combination:
