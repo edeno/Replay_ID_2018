@@ -232,10 +232,12 @@ def compare_overlap(labels1, labels2, info1, info2):
                       .join(overlap_labels2)
                       .assign(**percentage_overlap))
 
-    start_time1 = (info1.loc[overlap_labels.index.get_level_values(0).values,
-                             ['start_time', 'end_time']])
-    start_time2 = (info2.loc[overlap_labels.index.get_level_values(1).values,
-                             ['start_time', 'end_time']])
+    start_time1 = (info1.set_index('replay_number').loc[
+        overlap_labels.index.get_level_values(0).values,
+        ['start_time', 'end_time']])
+    start_time2 = (info2.set_index('replay_number').loc[
+        overlap_labels.index.get_level_values(1).values,
+        ['start_time', 'end_time']])
 
     time_difference = (start_time1.values - start_time2.values)
 
@@ -244,13 +246,23 @@ def compare_overlap(labels1, labels2, info1, info2):
     overlap_labels['end_time_difference'] = (
         time_difference[:, 1] / np.timedelta64(1, 's'))
 
-    return overlap_labels
+    replay_id1 = info1.reset_index().set_index('replay_number').replay_id.loc[
+        overlap_labels.index.get_level_values(0)].values
+    replay_id2 = info2.reset_index().set_index('replay_number').replay_id.loc[
+        overlap_labels.index.get_level_values(1)].values
+    replay_id_index = pd.MultiIndex.from_arrays(
+        [replay_id1, replay_id2], names=['replay_number1', 'replay_numbers2'])
+
+    return overlap_labels.set_index(replay_id_index)
 
 
-def add_epoch_info_to_dataframe(df, epoch_key):
-    animal, day, epoch = epoch_key
-    df['animal'] = animal
-    df['day'] = day
-    df['epoch'] = epoch
-
-    return df
+def add_epoch_info_to_dataframe(df, epoch_key, data_source):
+    df = df.reset_index()
+    df['animal'], df['day'], df['epoch'] = epoch_key
+    df['data_source'] = data_source
+    df['replay_id'] = (df.animal + '_' +
+                       df.day.astype(str).str.zfill(2) + '_' +
+                       df.epoch.astype(str).str.zfill(2) + '_' +
+                       df.replay_number.astype(str).str.zfill(3) + '_' +
+                       df.data_source)
+    return df.set_index('replay_id')

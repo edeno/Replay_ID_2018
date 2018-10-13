@@ -47,8 +47,8 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
             s, m, time=data['position_info'].index,
             use_likelihoods=likelihoods)
 
-        replay_info, is_replay = get_replay_times(detector_results)
         logging.info(f'Classifying replays with {name}...')
+        replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key, name)
         decoder_results, _ = decode_replays(
             data, replay_detector, is_replay, replay_info, sampling_frequency,
             position_metric)
@@ -56,8 +56,6 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         replay_info, replay_densities = summarize_replays(
             replay_info, detector_results, decoder_results, data,
             position_metric)
-
-        add_epoch_info_to_dataframe(replay_info, epoch_key)
 
         # Save Data
         save_replay_data(name, epoch_key, replay_info, replay_densities,
@@ -77,7 +75,9 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         logging.info(
             f'Analyzing replay overlap between {name1} and {name2}...')
         overlap_info = compare_overlap(labels1, labels2, info1, info2)
-        add_epoch_info_to_dataframe(overlap_info, epoch_key)
+        overlap_info['animal'] = epoch_key[0]
+        overlap_info['day'] = epoch_key[1]
+        overlap_info['epoch'] = epoch_key[2]
         save_overlap(overlap_info, epoch_key, name1, name2)
     logging.info('Done...')
 
