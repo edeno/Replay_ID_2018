@@ -2,22 +2,31 @@ import itertools
 import logging
 import sys
 from argparse import ArgumentParser
+from os.path import join
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
+import matplotlib.pyplot as plt
+
 from replay_identification import ReplayDetector
 from src.load_data import load_data
-from src.parameters import ANIMALS, SAMPLING_FREQUENCY, USE_LIKELIHOODS
+from src.parameters import (ANIMALS, FIGURE_DIR, SAMPLING_FREQUENCY,
+                            USE_LIKELIHOODS)
 from src.save_data import save_overlap, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
                                   summarize_replays)
+from src.visualization import plot_behavior
 
 
 def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
                  position_metric='linear_distance'):
+    animal, day, epoch = epoch_key
     data_types = set(itertools.chain(*use_likelihoods.values()))
     data = load_data(epoch_key, animals, sampling_frequency, data_types)
+    plot_behavior(data['position_info'], position_metric)
+    figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
+    plt.save_fig(join(FIGURE_DIR, 'behavior', figure_name))
 
     if data['spikes'] is None:
         s = data['spikes']
@@ -75,9 +84,9 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
             f'Analyzing replay overlap between {name1} and {name2}...')
         overlap_info = compare_overlap(
             labels1, labels2, info1, info2, SAMPLING_FREQUENCY)
-        overlap_info['animal'] = epoch_key[0]
-        overlap_info['day'] = epoch_key[1]
-        overlap_info['epoch'] = epoch_key[2]
+        overlap_info['animal'] = animal
+        overlap_info['day'] = day
+        overlap_info['epoch'] = epoch
         overlap_info['data_source1'] = name1
         overlap_info['data_source2'] = name2
         save_overlap(overlap_info, epoch_key, name1, name2)

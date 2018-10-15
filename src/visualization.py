@@ -107,3 +107,43 @@ def compare_similarity_of_overlapping_replays(overlap_info):
     g.set(xlim=(0, 1))
 
     return g
+
+
+def plot_behavior(position_info, position_metric='linear_distance'):
+
+    time = position_info.index.total_seconds()
+    is_inbound = position_info.task == 'Inbound'
+    is_outbound = position_info.task == 'Outbound'
+    position = position_info[position_metric].values
+    is_correct = position_info.is_correct.values
+    speed = position_info.linear_speed.values
+
+    p_min, p_max = np.nanmin(position), np.nanmax(position)
+    s_min, s_max = np.nanmin(speed), np.nanmax(speed)
+
+    fig, axes = plt.subplots(2, 1, figsize=(15, 5), sharex=True,
+                             constrained_layout=True)
+
+    axes[0].fill_between(time, is_correct * p_min,
+                         is_correct * p_max, color='#7fc97f',
+                         alpha=0.25, label='Correct')
+    axes[0].plot(time, position, '.', color='lightgrey')
+    axes[0].plot(time[is_inbound], position[is_inbound], '.',
+                 label='Inbound')
+    axes[0].plot(time[is_outbound], position[is_outbound], '.',
+                 label='Outbound')
+    axes[0].set_ylabel(f'{position_metric} (m)')
+    axes[0].set_ylim((p_min, p_max))
+    axes[0].legend()
+
+    axes[1].fill_between(time, is_correct * s_min,
+                         is_correct * s_max, color='#7fc97f',
+                         alpha=0.25)
+    axes[1].plot(time, speed, color='#7570b3', linewidth=1)
+    axes[1].axhline(4, linestyle='--', color='black')
+    axes[1].set_ylabel('linear_speed (m / s)')
+    axes[1].set_ylim((s_min, s_max))
+    axes[1].set_xlabel('Time (s)')
+
+    plt.xlim((time.min(), time.max()))
+    sns.despine()
