@@ -257,7 +257,7 @@ def compare_overlap(labels1, labels2, info1, info2, sampling_frequency):
     replay_id2 = info2.reset_index().set_index('replay_number').replay_id.loc[
         overlap_labels.index.get_level_values(1)].values
     replay_id_index = pd.MultiIndex.from_arrays(
-        [replay_id1, replay_id2], names=['replay_number1', 'replay_numbers2'])
+        [replay_id1, replay_id2], names=['replay_number1', 'replay_number2'])
 
     return overlap_labels.set_index(replay_id_index)
 
