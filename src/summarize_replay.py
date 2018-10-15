@@ -202,7 +202,7 @@ def _get_n_time_by_label(labels, overlap_labels):
     return overlap_labels1
 
 
-def compare_overlap(labels1, labels2, info1, info2):
+def compare_overlap(labels1, labels2, info1, info2, sampling_frequency):
     labels1 = labels1.copy().rename('labels1')
     labels2 = labels2.copy().rename('labels2')
     is_overlap = (labels1 > 0) & (labels2 > 0)
@@ -215,6 +215,10 @@ def compare_overlap(labels1, labels2, info1, info2):
                       .sort_index()
                       .rename('n_overlap')
                       .to_frame())
+    overlap_labels['overlap_duration'] = (
+        overlap_labels.n_overlap / sampling_frequency)
+
+    # Change overlap percentage to intersection / union
 
     overlap_labels1 = _get_n_time_by_label(labels1, overlap_labels)
     overlap_labels2 = _get_n_time_by_label(labels2, overlap_labels)
