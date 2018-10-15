@@ -16,7 +16,7 @@ def plot_data_source_counts(replay_info, kind='bar'):
     df = (replay_info
           .groupby(['animal', 'day', 'epoch'])['data_source']
           .value_counts()
-          .rename('counts by epoch')
+          .rename('counts_by_epoch')
           .reset_index())
 
     g = sns.catplot(x='data_source', y='counts_by_epoch', data=df, kind=kind,

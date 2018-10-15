@@ -1,4 +1,5 @@
 import itertools
+import logging
 import sys
 from os.path import join
 
@@ -17,6 +18,8 @@ from src.visualization import (compare_jaccard_similarity_of_replays,
 COLUMNS = ['animal', 'day', 'epoch',
            'replay_type', 'replay_motion_type', 'replay_movement_distance',
            'credible_interval_size', 'data_source', 'duration']
+
+logging.basicConfig(level='INFO')
 
 
 def save_overlap_figures(overlap_info, replay_info, name=None):
@@ -48,14 +51,15 @@ def save_overlap_figures(overlap_info, replay_info, name=None):
 
 
 def main():
+    logging.info('Gathering replay info...')
     filenames = join(PROCESSED_DATA_DIR, '*.nc')
-
     replay_info = pd.concat(
         [xr.open_mfdataset(
             filenames, group=f'{name}/replay_info', autoclose=True
         ).to_dataframe().loc[:, COLUMNS]
             for name in USE_LIKELIHOODS])
 
+    logging.info('Compare replay events...')
     # Compare number of events
     plot_data_source_counts(replay_info)
     plt.savefig(join(FIGURE_DIR, 'n_events.png'))
@@ -72,8 +76,8 @@ def main():
         plot_continuous_by_data_source(replay_info, covariate)
         plt.savefig(join(FIGURE_DIR, f'{covariate}_by_data_source.png'))
 
+    logging.info('Gathering overlap info...')
     names = list(USE_LIKELIHOODS.keys())
-
     combination = itertools.combinations(names, 2)
     overlap_info = []
 
@@ -84,6 +88,7 @@ def main():
 
     overlap_info = pd.concat(overlap_info)
 
+    logging.info('Comparing overlap of replay events...')
     save_overlap_figures(overlap_info, replay_info)
 
     overlap_grouper = overlap_info.groupby('animal')
