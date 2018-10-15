@@ -90,6 +90,9 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
     ripple_times.index = ripple_times.index.rename('replay_number')
     ripple_labels = get_ripple_labels(ripple_times, time)
 
+    ripple_times = ripple_times.assign(
+        duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
+
     return {
         'position_info': position_info,
         'ripple_times': ripple_times,

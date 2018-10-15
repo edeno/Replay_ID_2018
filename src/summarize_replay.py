@@ -26,11 +26,11 @@ def max_probability(df):
 
 
 def duration(df):
-    return df.index[-1] - df.index[0]
+    return (df.index[-1] - df.index[0]).total_seconds()
 
 
 def get_replay_times(results, probability_threshold=0.8,
-                     minimum_duration=np.timedelta64(0, 'ms')):
+                     minimum_duration=0.0):
     MINIMUM = 0.01
     labels = pd.DataFrame(
         {'replay_number': label(results.replay_probability > MINIMUM)[0],
