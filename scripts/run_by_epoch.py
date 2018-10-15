@@ -78,6 +78,8 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         overlap_info['animal'] = epoch_key[0]
         overlap_info['day'] = epoch_key[1]
         overlap_info['epoch'] = epoch_key[2]
+        overlap_info['data_source1'] = name1
+        overlap_info['data_source2'] = name2
         save_overlap(overlap_info, epoch_key, name1, name2)
     logging.info('Done...')
 
