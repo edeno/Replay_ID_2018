@@ -223,12 +223,14 @@ def compare_overlap(labels1, labels2, info1, info2, sampling_frequency):
     overlap_labels1 = _get_n_time_by_label(labels1, overlap_labels)
     overlap_labels2 = _get_n_time_by_label(labels2, overlap_labels)
 
-    name1 = 'overlap_percentage1'
-    name2 = 'overlap_percentage2'
-
     percentage_overlap = {
-        name1: lambda df: 100 * df.n_overlap / df[overlap_labels1.name],
-        name2: lambda df: 100 * df.n_overlap / df[overlap_labels2.name]
+        'overlap_percentage1': lambda df: (
+            100 * df.n_overlap / df.total_labels1),
+        'overlap_percentage2': lambda df: (
+            100 * df.n_overlap / df.total_labels2),
+        'jaccard_similarity': lambda df: (
+            100 * df.n_overlap / (
+                df.total_labels1 + df.total_labels2 - df.n_overlap))
     }
 
     overlap_labels = (overlap_labels
