@@ -28,21 +28,42 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
     plt.save_fig(join(FIGURE_DIR, 'behavior', figure_name))
 
-    if data['spikes'] is None:
-        s = data['spikes']
-    else:
-        s = data['spikes'].values
-
-    if data['multiunit'] is None:
-        m = data['multiunit']
-    else:
-        m = data['multiunit'].values
-
     replay_detector = ReplayDetector()
     replay_detector.fit(
-        data['is_ripple'].values.squeeze(), data['position_info'].speed.values,
-        data['position_info'][position_metric].values, data['power'],
-        s, m)
+        is_replay=data['is_ripple'], speed=data['position_info'].speed,
+        position=data['position_info'][position_metric],
+        lfp_power=data['power'], spikes=data['spikes'],
+        multiunit=data['multiunit'])
+
+    # Plot detector fits
+    if 'spikes' in data_types:
+        axes = replay_detector.plot_spikes(
+            data['spikes'], data['position_info'][position_metric],
+            data['is_ripple'], sampling_frequency=SAMPLING_FREQUENCY)
+        replay_detector.plot_fitted_place_fields(
+            sampling_frequency=SAMPLING_FREQUENCY, axes=axes)
+        figure_name = f'spikes_{animal}_{day:02d}_{epoch:02d}.png'
+        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
+
+    if 'lfp_power' in data_types:
+        replay_detector.plot_lfp_power(data['power'], data['is_ripple'])
+        figure_name = f'lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
+        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
+
+        replay_detector.plot_fitted_lfp_power_model()
+        figure_name = f'fitted_lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
+        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
+
+    if 'multiunit' in data_types:
+        replay_detector.plot_multiunit(
+            data['multiunit'],
+            data['position_info'][position_metric], data['is_ripple'])
+        figure_name = f'multiunit_{animal}_{day:02d}_{epoch:02d}.png'
+        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
+
+        replay_detector.plot_fitted_multiunit_model()
+        figure_name = f'fitted_multiunit_{animal}_{day:02d}_{epoch:02d}.png'
+        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
     names = []
     labels = []
@@ -52,9 +73,11 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         logging.info(f'Finding replays with {name}...')
         if name != 'ripple':
             detector_results = replay_detector.predict(
-                data['position_info'].speed.values,
-                data['position_info'][position_metric].values, data['power'],
-                s, m, time=data['position_info'].index,
+                speed=data['position_info'].speed,
+                position=data['position_info'][position_metric],
+                lfp_power=data['power'],
+                spikes=data['spikes'], multiunit=data['multiunit'],
+                time=data['position_info'].index,
                 use_likelihoods=likelihoods)
             replay_info, is_replay = get_replay_times(detector_results)
         else:

@@ -30,10 +30,12 @@ def duration(df):
 
 
 def get_replay_times(results, probability_threshold=0.8,
-                     minimum_duration=0.0):
-    MINIMUM = 0.01
+                     minimum_duration=0.005):
+
+    replay_labels = label(
+        results.replay_probability > probability_threshold)[0]
     labels = pd.DataFrame(
-        {'replay_number': label(results.replay_probability > MINIMUM)[0],
+        {'replay_number': replay_labels,
          'replay_probability': results.replay_probability.values},
         index=results.time.to_index())
 
@@ -42,15 +44,7 @@ def get_replay_times(results, probability_threshold=0.8,
                     .agg([start_time, end_time, duration, max_probability]))
     replay_times.columns = replay_times.columns.get_level_values(1)
 
-    replay_times = (replay_times.loc[
-        (replay_times.duration > minimum_duration) &
-        (replay_times.max_probability > probability_threshold)])
-
-    labels.loc[~labels.replay_number.isin(replay_times.index)] = 0
-    labels.replay_number = label(labels.replay_number)[0]
-    new_index = pd.Index(labels.replay_number.unique()[1:],
-                         name='replay_number')
-    replay_times = replay_times.set_index(new_index)
+    replay_times = replay_times.loc[replay_times.duration > minimum_duration]
 
     return replay_times, labels
 
@@ -80,8 +74,11 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
             .assign_coords(time=lambda da: da.time - r.start_time))
         density = dr.results.posterior_density.sum('state') / 4
 
-        detector_posterior.append(cur_detector_results.replay_posterior)
-        detector_likelihood.append(cur_detector_results.likelihood)
+        detector_posterior.append(
+            cur_detector_results.sel(state='Replay').posterior.drop('state'))
+        detector_likelihood.append(
+            np.exp(np.log(cur_detector_results.likelihood)
+                   .diff(dim='state')).squeeze())
 
         # Get decoder posterior
         decoder_posterior.append(dr.results.posterior_density)
