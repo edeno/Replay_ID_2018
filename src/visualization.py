@@ -102,8 +102,8 @@ def compare_similarity_of_overlapping_replays(overlap_info):
                       row_order=USE_LIKELIHOODS.keys(),
                       col_order=USE_LIKELIHOODS.keys())
     kde_kws = {'color': 'red', 'lw': 3, 'clip': (0, 1), 'shade': True}
-    g.map(sns.distplot, 'jaccard', hist=False, rug=False, kde_kws=kde_kws
-          ).set_titles('{row_name}, {col_name}', size=15)
+    g.map(sns.distplot, 'jaccard_similarity', hist=False, rug=False,
+          kde_kws=kde_kws).set_titles('{row_name}, {col_name}', size=15)
     g.set(xlim=(0, 1))
 
     return g
