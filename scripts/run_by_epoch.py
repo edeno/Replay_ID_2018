@@ -26,7 +26,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
     data = load_data(epoch_key, animals, sampling_frequency, data_types)
     plot_behavior(data['position_info'], position_metric)
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
-    plt.save_fig(join(FIGURE_DIR, 'behavior', figure_name))
+    plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
 
     replay_detector = ReplayDetector()
     replay_detector.fit(
