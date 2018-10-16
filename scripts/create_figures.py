@@ -71,7 +71,7 @@ def main():
     # Compare how far the replay position moves/posterior confidence bounds
     continuous_covariates = [
         'replay_movement_distance', 'credible_interval_size',
-        'overlap_duration']
+        'duration']
     for covariate in continuous_covariates:
         plot_continuous_by_data_source(replay_info, covariate)
         plt.savefig(join(FIGURE_DIR, f'{covariate}_by_data_source.png'))
