@@ -13,12 +13,18 @@ PROCESSED_DATA_DIR = join(ROOT_DIR, 'Processed-Data')
 FIGURE_DIR = join(ROOT_DIR, 'figures')
 
 ANIMALS = {
-    'bon': Animal(directory=join(RAW_DATA_DIR, 'Bond'),
-                  short_name='bon'),
-    'fra': Animal(directory=join(RAW_DATA_DIR, 'frank'),
-                  short_name='fra'),
-    'Cor': Animal(directory=join(RAW_DATA_DIR, 'CorrianderData'),
+    'bon': Animal(directory=join(RAW_DATA_DIR, 'Bond'), short_name='bon'),
+    'cha': Animal(directory=join(RAW_DATA_DIR, 'Chapati'), short_name='cha'),
+    'con': Animal(directory=join(RAW_DATA_DIR, 'Conley'), short_name='con'),
+    'Cor': Animal(directory=join(RAW_DATA_DIR, 'Corriander'),
                   short_name='Cor'),
+    'dav': Animal(directory=join(RAW_DATA_DIR, 'Dave'), short_name='dav'),
+    'dud': Animal(directory=join(RAW_DATA_DIR, 'Dudley'), short_name='dud'),
+    'egy': Animal(directory=join(RAW_DATA_DIR, 'Egypt'), short_name='egy'),
+    'fra': Animal(directory=join(RAW_DATA_DIR, 'Frank'), short_name='fra'),
+    'gov': Animal(directory=join(RAW_DATA_DIR, 'Government'),
+                  short_name='gov'),
+    'hig': Animal(directory=join(RAW_DATA_DIR, 'Higgs'), short_name='hig'),
 }
 
 USE_LIKELIHOODS = OrderedDict(
