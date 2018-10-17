@@ -66,13 +66,15 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     motion_slope = []
     replay_movement_distance = []
     credible_interval_size = []
+    n_unique_spiking = []
+    n_total_spikes = []
 
-    for r, dr in zip(replay_info.itertuples(), decoder_results):
+    for r, decoder_result in zip(replay_info.itertuples(), decoder_results):
         # Get detector posterior
         cur_detector_results = (
             detector_results.sel(time=slice(r.start_time, r.end_time))
             .assign_coords(time=lambda da: da.time - r.start_time))
-        density = dr.results.posterior_density.sum('state') / 4
+        density = decoder_result.results.posterior_density.sum('state') / 4
 
         detector_posterior.append(
             cur_detector_results.sel(state='Replay').posterior.drop('state'))
@@ -81,11 +83,12 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
                    .diff(dim='state')).squeeze())
 
         # Get decoder posterior
-        decoder_posterior.append(dr.results.posterior_density)
+        decoder_posterior.append(decoder_result.results.posterior_density)
 
         # Classify Replay
-        replay_type.append(dr.predicted_state())
-        replay_type_confidence.append(dr.predicted_state_probability())
+        replay_type.append(decoder_result.predicted_state())
+        replay_type_confidence.append(
+            decoder_result.predicted_state_probability())
 
         # Replay Motion
         motion_slope.append(_get_replay_motion(r, density, position_metric))
@@ -96,6 +99,10 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
         # How confident are we?
         credible_interval_size.append(_average_credible_interval_size(density))
 
+        # Add stats about spikes
+        n_unique_spiking.append(_n_unique_spiking(decoder_result.spikes))
+        n_total_spikes.append(_n_total_spikes(decoder_result.spikes))
+
     replay_info['replay_type'] = replay_type
     replay_info['replay_type_confidence'] = replay_type_confidence
     replay_info['replay_motion_slope'] = motion_slope
@@ -104,6 +111,8 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
         labels=['Towards', 'Neither', 'Away'])
     replay_info['replay_movement_distance'] = replay_movement_distance
     replay_info['credible_interval_size'] = credible_interval_size
+    replay_info['n_unique_spiking'] = n_unique_spiking
+    replay_info['n_spikes'] = n_total_spikes
 
     detector_posterior = (xr.concat(detector_posterior, dim=replay_info.index)
                           .rename('detector_posterior'))
@@ -185,6 +194,24 @@ def _get_replay_movement(posterior_density):
 def _average_credible_interval_size(posterior_density):
     credible_interval = np.percentile(posterior_density, [2.5, 97.5], axis=1)
     return np.mean(np.diff(credible_interval, axis=0))
+
+
+def _n_unique_spiking(spikes):
+    '''Number of units that spike per ripple
+    '''
+    if spikes.ndim > 2:
+        return np.sum(~np.isnan(spikes), axis=(1, 2)).nonzero()[0].size
+    else:
+        return spikes.sum(axis=0).nonzero()[0].size
+
+
+def _n_total_spikes(spikes):
+    '''Total number of spikes per ripple
+    '''
+    if spikes.ndim > 2:
+        return np.any(~np.isnan(spikes), axis=2).sum()
+    else:
+        return int(spikes.sum())
 
 
 def _get_n_time_by_label(labels, overlap_labels):
