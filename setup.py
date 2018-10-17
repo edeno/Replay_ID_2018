@@ -19,4 +19,6 @@ setup(
     packages=find_packages(),
     install_requires=INSTALL_REQUIRES,
     tests_require=TESTS_REQUIRE,
+    scripts=['scripts/create_figures.py', 'scripts/queue_cluster_jobs.py',
+             'scripts/run_by_epoch.py'],
 )
