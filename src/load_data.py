@@ -37,7 +37,9 @@ def estimate_ripple_band_power(lfps, sampling_frequency):
     c = Connectivity.from_multitaper(m)
     closest_200Hz_freq_ind = np.argmin(np.abs(c.frequencies - 200))
     power = c.power()[..., closest_200Hz_freq_ind, :].squeeze()
-    power = pd.DataFrame(power, index=pd.TimedeltaIndex(c.time, unit='s'))
+    n_samples = int(0.020 * sampling_frequency)
+    index = lfps.index[np.arange(0, power.shape[0] * n_samples, n_samples)]
+    power = pd.DataFrame(power, index=index)
     return power.reindex(lfps.index)
 
 
