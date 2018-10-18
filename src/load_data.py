@@ -41,9 +41,8 @@ def estimate_ripple_band_power(lfps, sampling_frequency):
     return power.reindex(lfps.index)
 
 
-def load_data(epoch_key, animals, sampling_frequency, data_types=None):
-    if data_types is None:
-        data_types = ['spikes', 'lfp_power']
+def load_data(epoch_key, animals, sampling_frequency, data_types,
+              brain_areas):
 
     logger.info('Loading Data...')
     position_info = (
@@ -55,7 +54,9 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
 
     tetrode_info = make_tetrode_dataframe(animals).xs(
         epoch_key, drop_level=False)
-    tetrode_keys = tetrode_info[(tetrode_info.validripple == 1)].index
+    is_brain_areas = tetrode_info.area.isin(brain_areas)
+    tetrode_keys = tetrode_info.loc[
+        (tetrode_info.validripple == 1) & is_brain_areas].index
     lfps = get_LFPs(tetrode_keys, animals)
     lfps = lfps.reindex(time)
 
@@ -70,14 +71,16 @@ def load_data(epoch_key, animals, sampling_frequency, data_types=None):
         neuron_info = neuron_info.loc[
             (neuron_info.numspikes > 0) &
             (neuron_info.type == 'principal') &
-            neuron_info.area.isin(['CA1', 'CA2', 'CA3'])]
+            neuron_info.area.isin(brain_areas)]
         spikes = (get_all_spike_indicators(neuron_info.index, animals)
                   .reindex(time))
     else:
         spikes = None
 
     if 'multiunit' in data_types:
-        tetrode_keys = tetrode_info[(tetrode_info.numcells > 0)].index
+
+        tetrode_keys = tetrode_info.loc[
+            (tetrode_info.numcells > 0) & is_brain_areas].index
         multiunit = (get_all_multiunit_indicators(tetrode_keys, animals)
                      .sel(features=_MARKS)
                      .reindex({'time': time}))
