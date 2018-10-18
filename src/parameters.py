@@ -15,7 +15,7 @@ FIGURE_DIR = join(ROOT_DIR, 'figures')
 ANIMALS = {
     'bon': Animal(directory=join(RAW_DATA_DIR, 'Bond'), short_name='bon'),
     'cha': Animal(directory=join(RAW_DATA_DIR, 'Chapati'), short_name='cha'),
-    'con': Animal(directory=join(RAW_DATA_DIR, 'Conley'), short_name='con'),
+    # 'con': Animal(directory=join(RAW_DATA_DIR, 'Conley'), short_name='con'),
     'Cor': Animal(directory=join(RAW_DATA_DIR, 'Corriander'),
                   short_name='Cor'),
     'dav': Animal(directory=join(RAW_DATA_DIR, 'Dave'), short_name='dav'),
