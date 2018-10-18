@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from replay_identification import ReplayDetector
 from src.load_data import load_data
 from src.parameters import (ANIMALS, FIGURE_DIR, SAMPLING_FREQUENCY,
-                            USE_LIKELIHOODS)
+                            USE_LIKELIHOODS, BRAIN_AREAS)
 from src.save_data import save_overlap, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
@@ -23,7 +23,8 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
                  position_metric='linear_distance'):
     animal, day, epoch = epoch_key
     data_types = set(itertools.chain(*use_likelihoods.values()))
-    data = load_data(epoch_key, animals, sampling_frequency, data_types)
+    data = load_data(epoch_key, animals, sampling_frequency, data_types,
+                     BRAIN_AREAS)
     plot_behavior(data['position_info'], position_metric)
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
     plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
