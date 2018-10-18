@@ -70,7 +70,6 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
             epoch_key, drop_level=False)
         neuron_info = neuron_info.loc[
             (neuron_info.numspikes > 0) &
-            (neuron_info.type == 'principal') &
             neuron_info.area.isin(brain_areas)]
         spikes = (get_all_spike_indicators(neuron_info.index, animals)
                   .reindex(time))
