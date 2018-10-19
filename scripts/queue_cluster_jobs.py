@@ -1,12 +1,13 @@
 '''Script for executing run_by_epoch on the cluster
 '''
 from argparse import ArgumentParser
-from os import getcwd, makedirs, environ
+from os import environ, getcwd, makedirs
 from os.path import join
 from subprocess import run
 from sys import exit
 
-from loren_frank_data_processing import make_epochs_dataframe
+from loren_frank_data_processing import (make_epochs_dataframe,
+                                         make_neuron_dataframe)
 from src.parameters import ANIMALS
 
 
@@ -51,9 +52,18 @@ def main():
     args = get_command_line_arguments()
     if args.Animal is None and args.Day is None and args.Epoch is None:
         epoch_info = make_epochs_dataframe(ANIMALS)
+        neuron_info = make_neuron_dataframe(ANIMALS)
+        n_neurons = (neuron_info
+                     .groupby(['animal', 'day', 'epoch'])
+                     .neuron_id
+                     .agg(len)
+                     .rename('n_neurons')
+                     .to_frame())
+
+        epoch_info = epoch_info.join(n_neurons)
         is_w_track = (epoch_info.environment
                       .isin(['TrackA', 'TrackB', 'WTrackA', 'WTrackB']))
-        epoch_keys = epoch_info[is_w_track].index
+        epoch_keys = epoch_info[is_w_track & (epoch_info.n_neurons > 4)].index
     else:
         epoch_keys = [(args.Animal, args.Day, args.Epoch)]
 
