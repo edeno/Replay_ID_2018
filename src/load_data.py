@@ -44,14 +44,14 @@ def estimate_ripple_band_power(lfps, sampling_frequency):
 
 
 def load_data(epoch_key, animals, sampling_frequency, data_types,
-              brain_areas):
+              brain_areas, speed_metric='linear_speed'):
 
     logger.info('Loading Data...')
     position_info = (
         get_interpolated_position_dataframe(epoch_key, animals)
         .dropna(subset=['linear_distance', 'linear_speed']))
 
-    speed = position_info.linear_speed
+    speed = position_info[speed_metric]
     time = position_info.index
 
     tetrode_info = make_tetrode_dataframe(animals).xs(

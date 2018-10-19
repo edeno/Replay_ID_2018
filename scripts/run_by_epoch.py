@@ -20,18 +20,19 @@ from src.visualization import plot_behavior
 
 
 def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
-                 position_metric='linear_distance'):
+                 position_metric='linear_distance',
+                 speed_metric='linear_speed'):
     animal, day, epoch = epoch_key
     data_types = set(itertools.chain(*use_likelihoods.values()))
     data = load_data(epoch_key, animals, sampling_frequency, data_types,
-                     BRAIN_AREAS)
+                     BRAIN_AREAS, speed_metric)
     plot_behavior(data['position_info'], position_metric)
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
     plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
 
     replay_detector = ReplayDetector()
     replay_detector.fit(
-        is_replay=data['is_ripple'], speed=data['position_info'].speed,
+        is_replay=data['is_ripple'], speed=data['position_info'][speed_metric],
         position=data['position_info'][position_metric],
         lfp_power=data['power'], spikes=data['spikes'],
         multiunit=data['multiunit'])
@@ -74,7 +75,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         logging.info(f'Finding replays with {name}...')
         if name != 'ripple':
             detector_results = replay_detector.predict(
-                speed=data['position_info'].speed,
+                speed=data['position_info'][speed_metric],
                 position=data['position_info'][position_metric],
                 lfp_power=data['power'],
                 spikes=data['spikes'], multiunit=data['multiunit'],
