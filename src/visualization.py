@@ -147,3 +147,98 @@ def plot_behavior(position_info, position_metric='linear_distance'):
 
     plt.xlim((time.min(), time.max()))
     sns.despine()
+
+
+def plot_replay_by_place_field(spikes, place_field_firing_rates,
+                               place_bin_centers, ax=None, cmap=None):
+    '''
+
+    Parameters
+    ----------
+    spikes : ndarray, shape (n_time, n_neurons)
+    place_field_firing_rates: ndarray, shape (n_neurons, n_place_bins)
+    place_bin_centers: ndarray, shape (n_place_bins,)
+
+    '''
+    ax = ax or plt.gca()
+    cmap = cmap or 'hsv'
+
+    cmap = plt.get_cmap(cmap)
+    place_colors = cmap(np.linspace(0.0, 1.0, place_bin_centers.size))
+    neuron_to_place_bin = np.argmax(place_field_firing_rates, axis=1)
+
+    time_ind, neuron_inds = np.nonzero(spikes)
+    colors = place_colors[neuron_to_place_bin[neuron_inds]]
+
+    for neuron_ind, color in zip(neuron_inds, colors):
+        ax.plot(place_bin_centers, place_field_firing_rates[neuron_ind],
+                color=color, linewidth=2)
+
+    ax.set_xlim((place_bin_centers.min(), place_bin_centers.max()))
+    ax.set_xlabel('Position')
+    ax.set_ylabel('Firing Rate (spikes / s)')
+    sns.despine()
+
+    return ax
+
+
+def plot_replay_spiking_ordered_by_place_fields(
+        spikes, place_field_firing_rates, place_bin_centers,
+        ax=None, cmap=None, sampling_frequency=1):
+
+    ax = ax or plt.gca()
+    cmap = cmap or 'hsv'
+
+    n_time, n_neurons = spikes.shape
+    n_place_bins = place_bin_centers.size
+    time = np.arange(n_time) / sampling_frequency
+
+    cmap = plt.get_cmap(cmap)
+    place_colors = cmap(np.linspace(0.0, 1.0, n_place_bins))
+    neuron_to_place_bin = np.argmax(place_field_firing_rates, axis=1)
+    ordered_place_field_to_neuron = np.argsort(neuron_to_place_bin)
+    neuron_to_ordered_place_field = np.argsort(ordered_place_field_to_neuron)
+
+    time_ind, neuron_ind = np.nonzero(spikes)
+
+    ax.scatter(time[time_ind], neuron_to_ordered_place_field[neuron_ind],
+               c=place_colors[neuron_to_place_bin[neuron_ind]])
+
+    ax.set_xlim(time[[0, -1]])
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Neurons')
+    ax.set_yticks(np.arange(n_neurons))
+    ax.set_yticklabels(ordered_place_field_to_neuron)
+    sns.despine()
+
+    return ax
+
+
+def plot_replay_position_by_spikes(
+    spikes, place_field_firing_rates, place_bin_centers,
+        ax=None, cmap=None, sampling_frequency=1):
+
+    ax = ax or plt.gca()
+    cmap = cmap or 'hsv'
+
+    n_time, n_neurons = spikes.shape
+    n_place_bins = place_bin_centers.size
+    time = np.arange(n_time) / sampling_frequency
+
+    cmap = plt.get_cmap(cmap)
+    place_colors = cmap(np.linspace(0.0, 1.0, n_place_bins))
+    neuron_to_place_bin = np.argmax(place_field_firing_rates, axis=1)
+
+    time_ind, neuron_ind = np.nonzero(spikes)
+
+    ax.scatter(time[time_ind],
+               place_bin_centers[neuron_to_place_bin[neuron_ind]],
+               c=place_colors[neuron_to_place_bin[neuron_ind]])
+
+    ax.set_xlim(time[[0, -1]])
+    ax.set_xlabel('Time')
+    ax.set_ylabel('Position')
+    ax.set_ylim(place_bin_centers[[0, -1]])
+    sns.despine()
+
+    return ax
