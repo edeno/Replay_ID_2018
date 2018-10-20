@@ -46,7 +46,8 @@ def plot_continuous_by_data_source(replay_info, covariate, kind='bar'):
     '''covariate = {'replay_movement_distance', 'credible_interval_size',
                     'duration'}'''
     g = sns.catplot(x='data_source', y=covariate, order=USE_LIKELIHOODS.keys(),
-                    data=replay_info, aspect=2, kind=kind, col='animal')
+                    data=replay_info, aspect=2, kind=kind, col='animal',
+                    col_wrap=1)
     return g
 
 
