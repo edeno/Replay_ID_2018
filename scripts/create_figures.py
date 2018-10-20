@@ -76,6 +76,8 @@ def main():
         plot_continuous_by_data_source(replay_info, covariate)
         plt.savefig(join(FIGURE_DIR, f'{covariate}_by_data_source.png'))
 
+    logging.info(replay_info.info(verbose=False, memory_usage='deep'))
+
     logging.info('Gathering overlap info...')
     names = list(USE_LIKELIHOODS.keys())
     combination = itertools.combinations(names, 2)
@@ -95,6 +97,10 @@ def main():
     replay_grouper = replay_info.groupby('animal')
     for (animal_name, oi), (_, ri) in zip(overlap_grouper, replay_grouper):
         save_overlap_figures(oi, ri, name=animal_name)
+
+    logging.info(overlap_info.info(verbose=False, memory_usage='deep'))
+
+    logging.info('Done...')
 
 
 if __name__ == '__main__':
