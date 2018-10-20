@@ -54,6 +54,8 @@ def plot_continuous_by_data_source(replay_info, covariate, kind='bar'):
 def compare_jaccard_similarity_of_replays(overlap_info, replay_info):
     '''Compare the number of replays that overlap for at least one time point
        vs. the union of the total number of replays for each data source.'''
+
+    fig, ax = plt.subplots(1, 1)
     names = list(USE_LIKELIHOODS.keys())
     n_overlap = (overlap_info
                  .loc[:, ['data_source1', 'data_source2']]
@@ -78,7 +80,7 @@ def compare_jaccard_similarity_of_replays(overlap_info, replay_info):
     jaccard_similarity.columns = jaccard_similarity.columns.droplevel(0)
     jaccard_similarity = jaccard_similarity.reindex(index=names, columns=names)
     ax = sns.heatmap(jaccard_similarity, annot=True, annot_kws={'size': 16},
-                     vmin=0.0, vmax=1.0)
+                     vmin=0.0, vmax=1.0, ax=ax)
     return ax
 
 
