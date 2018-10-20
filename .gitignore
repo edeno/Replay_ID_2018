@@ -117,3 +117,4 @@ ENV/
 *.pkl
 *.joblib
 *.gz
+*.png
