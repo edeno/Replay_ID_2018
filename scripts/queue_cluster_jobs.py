@@ -22,14 +22,8 @@ def get_command_line_arguments():
 
 def queue_job(python_cmd, directives=None, log_file='log.log',
               job_name='job'):
-    queue_cmd = (
-        'qsub {directives} -j y -o {log_file} -N {job_name}').format(
-            directives=directives,
-            log_file=log_file,
-            job_name=job_name)
-    cmd_line_script = ' | '.join([
-        'echo python {python_cmd}'.format(python_cmd=python_cmd),
-        queue_cmd])
+    queue_cmd = f'qsub {directives} -j y -o {log_file} -N {job_name}'
+    cmd_line_script = f'echo python {python_cmd}  | {queue_cmd}'
     run(cmd_line_script, shell=True)
 
 
@@ -39,12 +33,12 @@ def main():
     environ['OPENBLAS_NUM_THREADS'] = str(NUM_THREADS)
     environ['NUMBA_NUM_THREADS'] = str(NUM_THREADS)
     environ['OMP_NUM_THREADS'] = str(NUM_THREADS)
-    log_directory = join(getcwd(), 'logs')
-    makedirs(log_directory,  exist_ok=True)
+    LOG_DIRECTORY = join(getcwd(), 'logs')
+    makedirs(LOG_DIRECTORY,  exist_ok=True)
 
     python_function = 'run_by_epoch.py'
     directives = ' '.join(
-        ['-l h_rt=4:00:00', '-pe omp {0}'.format(NUM_THREADS),
+        ['-l h_rt=4:00:00', f'-pe omp {NUM_THREADS}',
          '-P braincom', '-notify', '-l mem_total=125G',
          '-v OPENBLAS_NUM_THREADS', '-v NUMBA_NUM_THREADS',
          '-v OMP_NUM_THREADS'])
@@ -67,21 +61,16 @@ def main():
     else:
         epoch_keys = [(args.Animal, args.Day, args.Epoch)]
 
-    for (animal, day, epoch_ind) in epoch_keys:
-        print('Animal: {0}, Day: {1}, Epoch: {2}'.format(
-            animal, day, epoch_ind))
-        log_file = '{animal}_{day:02d}_{epoch:02d}.log'.format(
-            animal=animal, day=day, epoch=epoch_ind)
-        job_name = (
-            '{function_name}_{animal}_{day:02d}_{epoch:02d}').format(
-            animal=animal, day=day, epoch=epoch_ind,
-            function_name=python_function.replace('.py', ''))
-        python_cmd = '{python_function} {animal} {day} {epoch}'.format(
-            python_function=python_function, animal=animal, day=day,
-            epoch=epoch_ind)
+    for animal, day, epoch in epoch_keys:
+        print(f'Animal: {animal}, Day: {day}, Epoch: {epoch}')
+
+        log_file = f'{animal}_{day:02d}_{epoch:02d}.log'
+        function_name = python_function.replace('.py', '')
+        job_name = f'{function_name}_{animal}_{day:02d}_{epoch:02d}'
+        python_cmd = f'{python_function} {animal} {day} {epoch}'
         queue_job(python_cmd,
                   directives=directives,
-                  log_file=join(log_directory, log_file),
+                  log_file=join(LOG_DIRECTORY, log_file),
                   job_name=job_name)
 
 
