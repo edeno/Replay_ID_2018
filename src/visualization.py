@@ -11,7 +11,7 @@ HUE_ORDER = {
 }
 
 
-def plot_data_source_counts(replay_info, kind='bar'):
+def plot_data_source_counts(replay_info, kind='bar', **kwargs):
     '''Compare number of replays by data source.'''
     df = (replay_info
           .groupby(['animal', 'day', 'epoch'])['data_source']
@@ -20,8 +20,8 @@ def plot_data_source_counts(replay_info, kind='bar'):
           .reset_index())
 
     g = sns.catplot(x='data_source', y='counts_by_epoch', data=df, kind=kind,
-                    col='animal', order=USE_LIKELIHOODS.keys(), aspect=2,
-                    col_wrap=2)
+                    order=USE_LIKELIHOODS.keys(), aspect=2,
+                    **kwargs)
 
     return g
 
@@ -34,20 +34,20 @@ def plot_proportion_events_by_data_source(replay_info, covariate,
           .value_counts(normalize=True)
           .rename('proportion')
           .reset_index())
-    g = sns.catplot(x=covariate, y='proportion', data=df, col='animal',
-                    hue='data_source', kind=kind, aspect=2, col_wrap=1,
+    g = sns.catplot(x=covariate, y='proportion', data=df,
+                    hue='data_source', kind=kind, aspect=2,
                     hue_order=USE_LIKELIHOODS.keys(),
                     order=HUE_ORDER[covariate],
                     **plot_kwargs)
     return g
 
 
-def plot_continuous_by_data_source(replay_info, covariate, kind='bar'):
+def plot_continuous_by_data_source(replay_info, covariate, kind='bar',
+                                   **kwargs):
     '''covariate = {'replay_movement_distance', 'credible_interval_size',
                     'duration'}'''
     g = sns.catplot(x='data_source', y=covariate, order=USE_LIKELIHOODS.keys(),
-                    data=replay_info, aspect=2, kind=kind, col='animal',
-                    col_wrap=2)
+                    data=replay_info, aspect=2, kind=kind, **kwargs)
     return g
 
 

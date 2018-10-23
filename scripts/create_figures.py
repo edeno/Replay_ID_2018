@@ -63,11 +63,18 @@ def main():
     # Compare number of events
     plot_data_source_counts(replay_info)
     plt.savefig(join(FIGURE_DIR, 'n_events.png'))
+    plot_data_source_counts(replay_info, col='animal', col_wrap=2)
+    plt.savefig(join(FIGURE_DIR, 'n_events_by_animal.png'))
 
     # Compare replay types
     for covariate in ['replay_type', 'replay_motion_type']:
         plot_proportion_events_by_data_source(replay_info, covariate)
         plt.savefig(join(FIGURE_DIR, f'prop_{covariate}_by_data_source.png'))
+        plot_proportion_events_by_data_source(replay_info, covariate,
+                                              col='animal', col_wrap=1)
+        plt.savefig(
+            join(FIGURE_DIR, f'prop_{covariate}_by_data_source_by_animal.png'))
+
     # Compare how far the replay position moves/posterior confidence bounds
     continuous_covariates = [
         'replay_movement_distance', 'credible_interval_size',
@@ -75,6 +82,10 @@ def main():
     for covariate in continuous_covariates:
         plot_continuous_by_data_source(replay_info, covariate)
         plt.savefig(join(FIGURE_DIR, f'{covariate}_by_data_source.png'))
+        plot_continuous_by_data_source(replay_info, covariate,
+                                       col='animal', col_wrap=2)
+        plt.savefig(
+            join(FIGURE_DIR, f'{covariate}_by_data_source_by_animal.png'))
 
     logging.info(replay_info.info(verbose=False, memory_usage='deep'))
 
