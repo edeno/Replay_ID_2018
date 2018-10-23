@@ -95,6 +95,7 @@ def compare_time_difference_of_overlapping_replays(
     g.map(plt.axvline, x=0, color='k', linestyle='--', linewidth=3, zorder=100)
     g.map(sns.distplot, time_difference, hist=False, rug=False, kde_kws=kde_kws
           ).set_titles('{row_name} - {col_name}', size=15)
+    g.set(xlim=(-0.2, 0.2))
     return g
 
 
