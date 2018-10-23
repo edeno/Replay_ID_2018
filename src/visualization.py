@@ -84,18 +84,31 @@ def compare_jaccard_similarity_of_replays(overlap_info, replay_info):
     return ax
 
 
+def _vertical_median_line(x, **kwargs):
+    plt.axvline(x.median(), **kwargs)
+
+
 def compare_time_difference_of_overlapping_replays(
         overlap_info, time_difference):
     '''Of the replays that do overlap, compare the start or end time'''
     g = sns.FacetGrid(data=overlap_info,  row='data_source1',
-                      col='data_source2', height=5, aspect=1,
+                      col='data_source2', height=5, aspect=1.1,
                       row_order=USE_LIKELIHOODS.keys(),
-                      col_order=USE_LIKELIHOODS.keys(), sharey=False)
+                      col_order=USE_LIKELIHOODS.keys(),
+                      sharey=False, sharex=False)
     kde_kws = {'color': 'red', 'lw': 3, 'shade': True}
-    g.map(plt.axvline, x=0, color='k', linestyle='--', linewidth=3, zorder=100)
+    g.map(plt.axvline, x=0, color='k', linewidth=1, zorder=1)
+
+    g.map(_vertical_median_line, time_difference,
+          color='blue', linewidth=3, zorder=100, linestyle='--')
     g.map(sns.distplot, time_difference, hist=False, rug=False, kde_kws=kde_kws
-          ).set_titles('{row_name} - {col_name}', size=15)
+          ).set_titles(
+            '{row_name} < {col_name} | {row_name} > {col_name}', size=12)
     g.set(xlim=(-0.2, 0.2))
+
+    for row_ind, column_ind in zip(*np.tril_indices_from(g.axes, 0)):
+        g.axes[row_ind, column_ind].set_visible(False)
+
     return g
 
 
@@ -104,11 +117,15 @@ def compare_similarity_of_overlapping_replays(overlap_info):
     g = sns.FacetGrid(data=overlap_info,  row='data_source1',
                       col='data_source2', height=5, aspect=1,
                       row_order=USE_LIKELIHOODS.keys(),
-                      col_order=USE_LIKELIHOODS.keys())
+                      col_order=USE_LIKELIHOODS.keys(),
+                      sharex=False, sharey=False)
     kde_kws = {'color': 'red', 'lw': 3, 'clip': (0, 1), 'shade': True}
     g.map(sns.distplot, 'jaccard_similarity', hist=False, rug=False,
           kde_kws=kde_kws).set_titles('{row_name}, {col_name}', size=15)
     g.set(xlim=(0, 1))
+
+    for row_ind, column_ind in zip(*np.tril_indices_from(g.axes, 0)):
+        g.axes[row_ind, column_ind].set_visible(False)
 
     return g
 
