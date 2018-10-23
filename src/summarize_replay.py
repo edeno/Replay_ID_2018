@@ -67,7 +67,9 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     replay_movement_distance = []
     credible_interval_size = []
     n_unique_spiking = []
+    pct_unique_spiking = []
     n_total_spikes = []
+    pct_total_spikes = []
 
     for r, decoder_result in zip(replay_info.itertuples(), decoder_results):
         # Get detector posterior
@@ -100,8 +102,14 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
         credible_interval_size.append(_average_credible_interval_size(density))
 
         # Add stats about spikes
-        n_unique_spiking.append(_n_unique_spiking(decoder_result.spikes))
-        n_total_spikes.append(_n_total_spikes(decoder_result.spikes))
+        n_unique = _n_unique_spiking(decoder_result.spikes)
+        n_neurons = decoder_result.spikes.shape[1]
+        n_total = _n_total_spikes(decoder_result.spikes)
+        n_possible_spikes = decoder_result.spikes.size
+        n_unique_spiking.append(n_unique)
+        pct_unique_spiking.append(n_unique / n_neurons)
+        n_total_spikes.append(n_total)
+        pct_total_spikes.append(n_total / n_possible_spikes)
 
     replay_info['replay_type'] = replay_type
     replay_info['replay_type_confidence'] = replay_type_confidence
@@ -112,7 +120,9 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     replay_info['replay_movement_distance'] = replay_movement_distance
     replay_info['credible_interval_size'] = credible_interval_size
     replay_info['n_unique_spiking'] = n_unique_spiking
+    replay_info['pct_unique_spiking'] = pct_unique_spiking
     replay_info['n_spikes'] = n_total_spikes
+    replay_info['pct_total_spikes'] = pct_total_spikes
 
     detector_posterior = (xr.concat(detector_posterior, dim=replay_info.index)
                           .rename('detector_posterior'))
