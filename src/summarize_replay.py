@@ -45,6 +45,7 @@ def get_replay_times(results, probability_threshold=0.8,
     replay_times.columns = replay_times.columns.get_level_values(1)
 
     replay_times = replay_times.loc[replay_times.duration > minimum_duration]
+    labels[~labels.isin(replay_times.index.values)] = 0
 
     return replay_times, labels
 
