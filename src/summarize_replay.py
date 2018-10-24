@@ -7,8 +7,8 @@ import xarray as xr
 from scipy.ndimage.measurements import label
 from scipy.stats import linregress
 
-from replay_classification import SortedSpikeDecoder
 from loren_frank_data_processing import reshape_to_segments
+from replay_classification import SortedSpikeDecoder
 
 logger = getLogger(__name__)
 
@@ -245,59 +245,70 @@ def compare_overlap(labels1, labels2, info1, info2, sampling_frequency):
     labels2 = labels2.copy().rename('labels2')
     is_overlap = (labels1 > 0) & (labels2 > 0)
 
-    overlap_labels = pd.concat(
-        (labels1.loc[is_overlap], labels2.loc[is_overlap]), axis=1)
-    overlap_labels = (overlap_labels
-                      .groupby(overlap_labels.columns.tolist())
-                      .agg(len)
-                      .sort_index()
-                      .rename('n_overlap')
-                      .to_frame())
-    overlap_labels['overlap_duration'] = (
-        overlap_labels.n_overlap / sampling_frequency)
+    if any(is_overlap):
+        overlap_labels = pd.concat(
+            (labels1.loc[is_overlap], labels2.loc[is_overlap]), axis=1)
+        overlap_labels = (overlap_labels
+                          .groupby(overlap_labels.columns.tolist())
+                          .agg(len)
+                          .sort_index()
+                          .rename('n_overlap')
+                          .to_frame())
+        overlap_labels['overlap_duration'] = (
+            overlap_labels.n_overlap / sampling_frequency)
 
-    # Change overlap percentage to intersection / union
+        overlap_labels1 = _get_n_time_by_label(labels1, overlap_labels)
+        overlap_labels2 = _get_n_time_by_label(labels2, overlap_labels)
 
-    overlap_labels1 = _get_n_time_by_label(labels1, overlap_labels)
-    overlap_labels2 = _get_n_time_by_label(labels2, overlap_labels)
+        percentage_overlap = {
+            'jaccard_similarity': lambda df: (
+                df.n_overlap / (
+                    df.total_labels1 + df.total_labels2 - df.n_overlap))
+        }
 
-    percentage_overlap = {
-        'overlap_percentage1': lambda df: (
-            100 * df.n_overlap / df.total_labels1),
-        'overlap_percentage2': lambda df: (
-            100 * df.n_overlap / df.total_labels2),
-        'jaccard_similarity': lambda df: (
-            df.n_overlap / (
-                df.total_labels1 + df.total_labels2 - df.n_overlap))
-    }
+        overlap_labels = (overlap_labels
+                          .join(overlap_labels1)
+                          .join(overlap_labels2)
+                          .assign(**percentage_overlap))
 
-    overlap_labels = (overlap_labels
-                      .join(overlap_labels1)
-                      .join(overlap_labels2)
-                      .assign(**percentage_overlap))
+        start_time1 = (info1.set_index('replay_number').loc[
+            overlap_labels.index.get_level_values(0).values,
+            ['start_time', 'end_time']])
+        start_time2 = (info2.set_index('replay_number').loc[
+            overlap_labels.index.get_level_values(1).values,
+            ['start_time', 'end_time']])
 
-    start_time1 = (info1.set_index('replay_number').loc[
-        overlap_labels.index.get_level_values(0).values,
-        ['start_time', 'end_time']])
-    start_time2 = (info2.set_index('replay_number').loc[
-        overlap_labels.index.get_level_values(1).values,
-        ['start_time', 'end_time']])
+        time_difference = (start_time1.values - start_time2.values)
 
-    time_difference = (start_time1.values - start_time2.values)
+        overlap_labels['start_time_difference'] = (
+            time_difference[:, 0] / np.timedelta64(1, 's'))
+        overlap_labels['end_time_difference'] = (
+            time_difference[:, 1] / np.timedelta64(1, 's'))
 
-    overlap_labels['start_time_difference'] = (
-        time_difference[:, 0] / np.timedelta64(1, 's'))
-    overlap_labels['end_time_difference'] = (
-        time_difference[:, 1] / np.timedelta64(1, 's'))
+        replay_id1 = (info1
+                      .reset_index()
+                      .set_index('replay_number')
+                      .replay_id
+                      .loc[overlap_labels.index.get_level_values(0)]
+                      .values)
+        replay_id2 = (info2
+                      .reset_index()
+                      .set_index('replay_number')
+                      .replay_id
+                      .loc[overlap_labels.index.get_level_values(1)]
+                      .values)
+        replay_id_index = pd.MultiIndex.from_arrays(
+            [replay_id1, replay_id2],
+            names=['replay_number1', 'replay_number2'])
 
-    replay_id1 = info1.reset_index().set_index('replay_number').replay_id.loc[
-        overlap_labels.index.get_level_values(0)].values
-    replay_id2 = info2.reset_index().set_index('replay_number').replay_id.loc[
-        overlap_labels.index.get_level_values(1)].values
-    replay_id_index = pd.MultiIndex.from_arrays(
-        [replay_id1, replay_id2], names=['replay_number1', 'replay_number2'])
-
-    return overlap_labels.set_index(replay_id_index)
+        return overlap_labels.set_index(replay_id_index)
+    else:
+        COLUMN_NAMES = ['replay_number1', 'replay_number2', 'n_overlap',
+                        'overlap_duration', 'jaccard_similarity',
+                        'start_time_difference', 'end_time_difference']
+        empty_df = (pd.DataFrame([], columns=COLUMN_NAMES)
+                    .set_index(['replay_number1', 'replay_number2']))
+        return empty_df
 
 
 def add_epoch_info_to_dataframe(df, epoch_key, data_source):
