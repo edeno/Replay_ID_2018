@@ -22,32 +22,73 @@ COLUMNS = ['animal', 'day', 'epoch',
 logging.basicConfig(level='INFO')
 
 
-def save_overlap_figures(overlap_info, replay_info, name=None):
-    compare_jaccard_similarity_of_replays(overlap_info, replay_info)
-    figure_name = 'jaccard_similarity_of_replays'
+def _add_name(figure_name, name=None):
     if name is None:
         figure_name = join(FIGURE_DIR, f'{figure_name}.png')
     else:
         figure_name = join(FIGURE_DIR, f'{figure_name}_{name}.png')
+    return figure_name
+
+
+def save_overlap_figures(overlap_info, replay_info, name=None):
+    compare_jaccard_similarity_of_replays(overlap_info, replay_info)
+    figure_name = 'jaccard_similarity_of_replays'
+    figure_name = _add_name(figure_name, name)
     plt.savefig(figure_name)
 
     for time_difference in ['start_time_difference', 'end_time_difference']:
         compare_time_difference_of_overlapping_replays(
             overlap_info, time_difference)
         figure_name = f'{time_difference}_of_overlapping_replays'
-        if name is None:
-            figure_name = join(FIGURE_DIR, f'{figure_name}.png')
-        else:
-            figure_name = join(FIGURE_DIR, f'{figure_name}_{name}.png')
+        figure_name = _add_name(figure_name, name)
         plt.savefig(figure_name)
 
     compare_similarity_of_overlapping_replays(overlap_info)
     figure_name = 'similarity_of_overlapping_replays'
-    if name is None:
-        figure_name = join(FIGURE_DIR, f'{figure_name}.png')
-    else:
-        figure_name = join(FIGURE_DIR, f'{figure_name}_{name}.png')
+    figure_name = _add_name(figure_name, name)
     plt.savefig(figure_name)
+
+
+def save_replay_info_figures(replay_info, name=None):
+    # Compare number of events
+    plot_data_source_counts(replay_info)
+    figure_name = 'n_events'
+    figure_name = _add_name(figure_name, name)
+    plt.savefig(figure_name)
+
+    plot_data_source_counts(replay_info, col='animal', col_wrap=2)
+    figure_name = 'n_events_by_animal'
+    figure_name = _add_name(figure_name, name)
+    plt.savefig(figure_name)
+
+    # Compare replay types
+    for covariate in ['replay_type', 'replay_motion_type']:
+        plot_proportion_events_by_data_source(replay_info, covariate)
+        figure_name = f'prop_{covariate}_by_data_source'
+        figure_name = _add_name(figure_name, name)
+        plt.savefig(figure_name)
+
+        plot_proportion_events_by_data_source(replay_info, covariate,
+                                              col='animal', col_wrap=1)
+        figure_name = f'prop_{covariate}_by_data_source_by_animal'
+        figure_name = _add_name(figure_name, name)
+        plt.savefig(figure_name)
+
+    # Compare how far the replay position moves/posterior confidence bounds
+    continuous_covariates = [
+        'replay_movement_distance', 'credible_interval_size',
+        'duration', 'pct_unique_spiking', 'pct_total_spikes']
+    for covariate in continuous_covariates:
+        plot_continuous_by_data_source(replay_info, covariate)
+        figure_name = f'{covariate}_by_data_source'
+        figure_name = _add_name(figure_name, name)
+        plt.savefig(figure_name)
+
+        plot_continuous_by_data_source(replay_info, covariate,
+                                       col='animal', col_wrap=2)
+        figure_name = f'{covariate}_by_data_source_by_animal'
+        figure_name = _add_name(figure_name, name)
+        plt.savefig(figure_name)
 
 
 def main():
@@ -60,37 +101,11 @@ def main():
             for name in USE_LIKELIHOODS])
 
     logging.info('Compare replay events...')
-    # Compare number of events
-    plot_data_source_counts(replay_info)
-    plt.savefig(join(FIGURE_DIR, 'n_events.png'))
-    plot_data_source_counts(replay_info, col='animal', col_wrap=2)
-    plt.savefig(join(FIGURE_DIR, 'n_events_by_animal.png'))
-
-    # Compare replay types
-    for covariate in ['replay_type', 'replay_motion_type']:
-        plot_proportion_events_by_data_source(replay_info, covariate)
-        plt.savefig(join(FIGURE_DIR, f'prop_{covariate}_by_data_source.png'))
-        plot_proportion_events_by_data_source(replay_info, covariate,
-                                              col='animal', col_wrap=1)
-        plt.savefig(
-            join(FIGURE_DIR, f'prop_{covariate}_by_data_source_by_animal.png'))
-
-    # Compare how far the replay position moves/posterior confidence bounds
-    continuous_covariates = [
-        'replay_movement_distance', 'credible_interval_size',
-        'duration', 'pct_unique_spiking', 'pct_total_spikes']
-    for covariate in continuous_covariates:
-        plot_continuous_by_data_source(replay_info, covariate)
-        plt.savefig(join(FIGURE_DIR, f'{covariate}_by_data_source.png'))
-        plot_continuous_by_data_source(replay_info, covariate,
-                                       col='animal', col_wrap=2)
-        plt.savefig(
-            join(FIGURE_DIR, f'{covariate}_by_data_source_by_animal.png'))
-
+    save_replay_info_figures(replay_info)
     logging.info(replay_info.info(verbose=False, memory_usage='deep'))
 
     logging.info('Gathering overlap info...')
-    names = list(USE_LIKELIHOODS.keys())
+    names = list(USE_LIKELIHOODS)
     combination = itertools.combinations(names, 2)
     overlap_info = []
 
@@ -110,6 +125,20 @@ def main():
         save_overlap_figures(oi, ri, name=animal_name)
 
     logging.info(overlap_info.info(verbose=False, memory_usage='deep'))
+
+    for name1, name2 in itertools.combinations(USE_LIKELIHOODS, 2):
+        o = overlap_info.loc[
+            (overlap_info.data_source1 == name1) &
+            (overlap_info.data_source2 == name2)]
+        not_overlap_info1 = replay_info.loc[
+            ~replay_info.index.isin(o.replay_number2) &
+            (replay_info.data_source == name1)]
+        not_overlap_info2 = replay_info.loc[
+            ~replay_info.index.isin(o.replay_number1) &
+            (replay_info.data_source == name2)]
+        not_overlap_info = pd.concat((not_overlap_info1, not_overlap_info2))
+        name = f'no_overlap_{name1}_vs_{name2}'
+        save_replay_info_figures(not_overlap_info, name)
 
     logging.info('Done...')
 
