@@ -143,7 +143,7 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
 def decode_replays(data, replay_detector, is_replay, replay_info,
                    sampling_frequency, position_metric='linear_distance'):
     initial_conditions = {
-        'linear_distance': 'Inbound-Outbound',
+        'linear_distance': 'Uniform',
         'linear_position': 'Uniform',
         'linear_position2': 'Uniform',
     }
