@@ -126,19 +126,15 @@ def main():
 
     logging.info(overlap_info.info(verbose=False, memory_usage='deep'))
 
-    for name1, name2 in itertools.combinations(USE_LIKELIHOODS, 2):
-        o = overlap_info.loc[
-            (overlap_info.data_source1 == name1) &
-            (overlap_info.data_source2 == name2)]
-        not_overlap_info1 = replay_info.loc[
-            ~replay_info.index.isin(o.replay_number2) &
-            (replay_info.data_source == name1)]
-        not_overlap_info2 = replay_info.loc[
-            ~replay_info.index.isin(o.replay_number1) &
-            (replay_info.data_source == name2)]
-        not_overlap_info = pd.concat((not_overlap_info1, not_overlap_info2))
+    grouper = overlap_info.groupby(['data_source1', 'data_source2'])
+    for (name1, name2), df in grouper:
+        is_not_overlap = ((
+            ~replay_info.index.isin(df.replay_number2) &
+            (replay_info.data_source == name1)) |
+            (~replay_info.index.isin(df.replay_number1) &
+             (replay_info.data_source == name2)))
         name = f'no_overlap_{name1}_vs_{name2}'
-        save_replay_info_figures(not_overlap_info, name)
+        save_replay_info_figures(replay_info[is_not_overlap], name)
 
     logging.info('Done...')
 
