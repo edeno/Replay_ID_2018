@@ -17,7 +17,8 @@ from src.visualization import (compare_jaccard_similarity_of_replays,
 
 COLUMNS = ['animal', 'day', 'epoch',
            'replay_type', 'replay_motion_type', 'replay_movement_distance',
-           'credible_interval_size', 'data_source', 'duration']
+           'credible_interval_size', 'data_source', 'duration',
+           'pct_unique_spiking', 'pct_total_spikes']
 
 logging.basicConfig(level='INFO')
 
