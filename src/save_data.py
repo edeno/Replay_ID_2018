@@ -6,6 +6,8 @@ from src.parameters import PROCESSED_DATA_DIR
 
 def save_replay_data(name, epoch_key, replay_info, replay_densities,
                      is_replay):
+    replay_densities = replay_densities.drop(
+        ['detector_likelihood', 'decoder_posterior']).drop('state')
     save_xarray(PROCESSED_DATA_DIR, epoch_key, replay_densities,
                 f'{name}/replay_densities')
     save_xarray(PROCESSED_DATA_DIR, epoch_key,
