@@ -149,6 +149,7 @@ def decode_replays(data, replay_detector, is_replay, replay_info,
     }
 
     decoder = SortedSpikeDecoder(
+        place_bin_size=replay_detector.place_bin_size,
         replay_speedup_factor=replay_detector.replay_speed,
         knot_spacing=replay_detector.spike_model_knot_spacing,
         spike_model_penalty=replay_detector.spike_model_penalty
