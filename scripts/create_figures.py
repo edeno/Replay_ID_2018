@@ -100,7 +100,7 @@ def main():
         ).to_dataframe().loc[:, COLUMNS]
             for name in USE_LIKELIHOODS])
 
-    logging.info('Compare replay events...')
+    logging.info('Comparing all replay events...')
     save_replay_info_figures(replay_info)
     logging.info(replay_info.info(verbose=False, memory_usage='deep'))
 
@@ -116,7 +116,7 @@ def main():
 
     overlap_info = pd.concat(overlap_info)
 
-    logging.info('Comparing overlap of replay events...')
+    logging.info('Comparing overlapping replay events...')
     save_overlap_figures(overlap_info, replay_info)
 
     overlap_grouper = overlap_info.groupby('animal')
@@ -126,6 +126,7 @@ def main():
 
     logging.info(overlap_info.info(verbose=False, memory_usage='deep'))
 
+    logging.info('Comparing non-overlapping replay events...')
     grouper = overlap_info.groupby(['data_source1', 'data_source2'])
     for (name1, name2), df in grouper:
         is_not_overlap = ((
