@@ -16,7 +16,7 @@ from src.save_data import save_overlap, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
                                   summarize_replays)
-from src.visualization import plot_behavior, plot_detector_posteriors
+from src.visualization import plot_behavior
 
 
 def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
@@ -100,9 +100,6 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         # Save Data
         save_replay_data(data_source, epoch_key, replay_info, replay_densities,
                          is_replay)
-        plot_detector_posteriors(replay_densities)
-        figure_name = f'{animal}_{day:02}_{epoch:02}_{data_source}.png'
-        plt.savefig(join(FIGURE_DIR, 'posterior', figure_name))
         data_sources.append(data_source)
         labels.append(is_replay.replay_number)
         infos.append(replay_info)
