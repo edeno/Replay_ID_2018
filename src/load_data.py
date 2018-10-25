@@ -67,16 +67,13 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
     else:
         power = None
 
-    if 'spikes' in data_types:
-        neuron_info = make_neuron_dataframe(animals).xs(
-            epoch_key, drop_level=False)
-        neuron_info = neuron_info.loc[
-            (neuron_info.numspikes > 0) &
-            neuron_info.area.isin(brain_areas)]
-        spikes = (get_all_spike_indicators(neuron_info.index, animals)
-                  .reindex(time))
-    else:
-        spikes = None
+    neuron_info = make_neuron_dataframe(animals).xs(
+        epoch_key, drop_level=False)
+    neuron_info = neuron_info.loc[
+        (neuron_info.numspikes > 0) &
+        neuron_info.area.isin(brain_areas)]
+    spikes = (get_all_spike_indicators(neuron_info.index, animals)
+              .reindex(time))
 
     if 'multiunit' in data_types:
 
