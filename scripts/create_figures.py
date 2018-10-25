@@ -143,6 +143,10 @@ def main():
         name = f'no_overlap_{name1}_vs_{name2}'
         save_replay_info_figures(replay_info[is_not_overlap], name)
 
+    logging.info('Saving dataframes...')
+    replay_info.to_csv('replay_info.csv', mode='w')
+    overlap_info.to_csv('overlap_info.csv', mode='w')
+    
     logging.info('Done...')
 
 
