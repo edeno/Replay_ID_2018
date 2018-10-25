@@ -7,6 +7,7 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
@@ -85,6 +86,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         else:
             replay_info = data['ripple_times'].copy()
             is_replay = data['ripple_labels'].copy()
+            detector_results *= np.nan
 
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
