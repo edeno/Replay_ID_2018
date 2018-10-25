@@ -147,6 +147,7 @@ def plot_behavior(position_info, position_metric='linear_distance'):
 
     axes[0].fill_between(time, is_correct * p_min,
                          is_correct * p_max, color='#7fc97f',
+                         where=is_correct,
                          alpha=0.25, label='Correct')
     axes[0].plot(time, position, '.', color='lightgrey')
     axes[0].plot(time[is_inbound], position[is_inbound], '.',
@@ -159,7 +160,7 @@ def plot_behavior(position_info, position_metric='linear_distance'):
 
     axes[1].fill_between(time, is_correct * s_min,
                          is_correct * s_max, color='#7fc97f',
-                         alpha=0.25)
+                         where=is_correct, alpha=0.25)
     axes[1].plot(time, speed, color='#7570b3', linewidth=1)
     axes[1].axhline(4, linestyle='--', color='black')
     axes[1].set_ylabel('linear_speed (m / s)')
