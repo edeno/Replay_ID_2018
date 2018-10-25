@@ -16,7 +16,7 @@ from src.save_data import save_overlap, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
                                   summarize_replays)
-from src.visualization import plot_behavior
+from src.visualization import plot_behavior, plot_detector_posteriors
 
 
 def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
@@ -67,13 +67,13 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         figure_name = f'fitted_multiunit_{animal}_{day:02d}_{epoch:02d}.png'
         plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
-    names = []
+    data_sources = []
     labels = []
     infos = []
 
-    for name, likelihoods in use_likelihoods.items():
-        logging.info(f'Finding replays with {name}...')
-        if name != 'ripple':
+    for data_source, likelihoods in use_likelihoods.items():
+        logging.info(f'Finding replays with {data_source}...')
+        if data_source != 'ripple':
             detector_results = replay_detector.predict(
                 speed=data['position_info'][speed_metric],
                 position=data['position_info'][position_metric],
@@ -86,18 +86,19 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
             replay_info = data['ripple_times'].copy()
             is_replay = data['ripple_labels'].copy()
 
-        logging.info(f'Classifying replays with {name}...')
-        replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key, name)
+        logging.info(f'Classifying replays with {data_source}...')
+        replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
+                                                  data_source)
         decoder_results, _ = decode_replays(
             data, replay_detector, is_replay, replay_info, sampling_frequency,
             position_metric)
-        logging.info(f'Summarizing replays with {name}...')
+        logging.info(f'Summarizing replays with {data_source}...')
         replay_info, replay_densities = summarize_replays(
             replay_info, detector_results, decoder_results, data,
             position_metric)
 
         # Save Data
-        save_replay_data(name, epoch_key, replay_info, replay_densities,
+        save_replay_data(data_source, epoch_key, replay_info, replay_densities,
                          is_replay)
         plot_detector_posteriors(replay_densities)
         figure_name = f'{animal}_{day:02}_{epoch:02}_{data_source}.png'
@@ -106,7 +107,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         labels.append(is_replay.replay_number)
         infos.append(replay_info)
 
-    combination = itertools.combinations(zip(labels, infos, names), 2)
+    combination = itertools.combinations(zip(labels, infos, data_sources), 2)
     for (labels1, info1, name1), (labels2, info2, name2) in combination:
         logging.info(
             f'Analyzing replay overlap between {name1} and {name2}...')
