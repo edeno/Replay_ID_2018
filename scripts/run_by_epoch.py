@@ -11,8 +11,8 @@ import numpy as np
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
-from src.parameters import (ANIMALS, FIGURE_DIR, SAMPLING_FREQUENCY,
-                            USE_LIKELIHOODS, BRAIN_AREAS)
+from src.parameters import (ANIMALS, BRAIN_AREAS, FIGURE_DIR,
+                            SAMPLING_FREQUENCY, USE_LIKELIHOODS)
 from src.save_data import save_overlap, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
