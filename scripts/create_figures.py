@@ -92,13 +92,18 @@ def save_replay_info_figures(replay_info, name=None):
         plt.savefig(figure_name)
 
 
+def _preprocess(ds):
+    return ds[COLUMNS]
+
+
 def main():
     logging.info('Gathering replay info...')
     filenames = join(PROCESSED_DATA_DIR, '*.nc')
     replay_info = pd.concat(
         [xr.open_mfdataset(
-            filenames, group=f'{name}/replay_info', autoclose=True
-        ).to_dataframe().loc[:, COLUMNS]
+            filenames, group=f'{name}/replay_info', autoclose=True,
+            preprocess=_preprocess
+        ).to_dataframe()
             for name in USE_LIKELIHOODS])
 
     logging.info('Comparing all replay events...')
