@@ -102,7 +102,7 @@ def main():
     replay_info = pd.concat(
         [xr.open_mfdataset(
             filenames, group=f'{name}/replay_info', autoclose=True,
-            preprocess=_preprocess
+            preprocess=_preprocess, parallel=True,
         ).to_dataframe()
             for name in USE_LIKELIHOODS])
 
@@ -117,7 +117,8 @@ def main():
 
     for name1, name2 in combination:
         overlap_info.append(xr.open_mfdataset(
-            filenames, group=f'/overlap/{name1}/{name2}', autoclose=True
+            filenames, group=f'/overlap/{name1}/{name2}', autoclose=True,
+            parallel=True,
         ).to_dataframe())
 
     overlap_info = pd.concat(overlap_info)
@@ -146,7 +147,7 @@ def main():
     logging.info('Saving dataframes...')
     replay_info.to_csv('replay_info.csv', mode='w')
     overlap_info.to_csv('overlap_info.csv', mode='w')
-    
+
     logging.info('Done...')
 
 
