@@ -77,7 +77,7 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
         cur_detector_results = (
             detector_results.sel(time=slice(r.start_time, r.end_time))
             .assign_coords(time=lambda da: da.time - r.start_time))
-        density = decoder_result.results.posterior_density.sum('state') / 4
+        density = decoder_result.results.posterior_density.sum('state')
 
         detector_posterior.append(
             cur_detector_results.sel(state='Replay').posterior.drop('state'))
