@@ -264,3 +264,24 @@ def plot_replay_position_by_spikes(
     sns.despine()
 
     return ax
+
+
+def plot_detector_posteriors(replay_densities, col_wrap=5):
+    ds = replay_densities.detector_posterior
+    ds = ds.assign_coords(time=ds.time / np.timedelta64(1, 's'))
+
+    n_plots = len(ds.replay_id)
+    n_rows = int(np.ceil(n_plots / col_wrap))
+
+    fig, axes = plt.subplots(n_rows, col_wrap,
+                             figsize=(col_wrap * 3, n_rows * 3),
+                             sharey=True, constrained_layout=True,
+                             squeeze=False)
+    for ax, id in zip(axes.flat, ds.replay_id.values):
+        ds.sel(replay_id=id).dropna('time').plot(
+            x='time', y='position', ax=ax, vmin=0, robust=True,
+            add_colorbar=False)
+        ax.set_title(id, fontsize=12)
+    if n_plots < axes.size:
+        for ax in axes.flat[n_plots:]:
+            ax.axis('off')
