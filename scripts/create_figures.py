@@ -86,10 +86,9 @@ def save_replay_info_figures(replay_info, name=None):
 
 
 def main():
-    logging.info('Gathering replay info...')
-    replay_info = pd.read_csv(join(PROCESSED_DATA_DIR, 'replay_info.csv'))
-
     logging.info('Comparing all replay events...')
+    replay_info_path = join(PROCESSED_DATA_DIR, 'replay_info.csv')
+    replay_info = pd.read_csv(replay_info_path)
     save_replay_info_figures(replay_info)
 
     logging.info('Comparing overlapping replay events...')
