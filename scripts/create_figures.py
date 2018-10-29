@@ -13,6 +13,8 @@ from src.visualization import (compare_jaccard_similarity_of_replays,
                                plot_data_source_counts,
                                plot_proportion_events_by_data_source)
 
+logging.basicConfig(level='INFO')
+
 
 def _add_name(figure_name, name=None):
     if name is None:
