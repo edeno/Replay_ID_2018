@@ -11,7 +11,7 @@ HUE_ORDER = {
 }
 
 
-def plot_data_source_counts(replay_info, kind='bar', **kwargs):
+def plot_data_source_counts(replay_info, kind='violin', **kwargs):
     '''Compare number of replays by data source.'''
     df = (replay_info
           .groupby(['animal', 'day', 'epoch'])['data_source']
@@ -27,7 +27,7 @@ def plot_data_source_counts(replay_info, kind='bar', **kwargs):
 
 
 def plot_proportion_events_by_data_source(replay_info, covariate,
-                                          kind='bar', **plot_kwargs):
+                                          kind='violin', **plot_kwargs):
     '''covariate = {'replay_type', 'replay_motion_type'}'''
     group = ['data_source', 'animal', 'day', 'epoch']
     df = (replay_info.groupby(group)[covariate]
@@ -42,7 +42,7 @@ def plot_proportion_events_by_data_source(replay_info, covariate,
     return g
 
 
-def plot_continuous_by_data_source(replay_info, covariate, kind='bar',
+def plot_continuous_by_data_source(replay_info, covariate, kind='violin',
                                    **kwargs):
     '''covariate = {'replay_movement_distance', 'credible_interval_size',
                     'duration'}'''
