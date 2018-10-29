@@ -31,7 +31,8 @@ def main():
          for name in USE_LIKELIHOODS])
 
     logging.info(replay_info.info(verbose=False, memory_usage='deep'))
-    replay_info.to_csv('replay_info.csv', mode='w')
+    replay_info_path = join(PROCESSED_DATA_DIR, 'replay_info.csv')
+    replay_info.to_csv(replay_info_path, mode='w')
 
     logging.info('Gathering overlap info...')
     names = list(USE_LIKELIHOODS)
@@ -47,7 +48,8 @@ def main():
     overlap_info = pd.concat(overlap_info)
 
     logging.info(overlap_info.info(verbose=False, memory_usage='deep'))
-    overlap_info.to_csv('overlap_info.csv', mode='w')
+    overlap_info_path = join(PROCESSED_DATA_DIR, 'overlap_info.csv')
+    overlap_info.to_csv(overlap_info_path, mode='w')
 
     logging.info('Done...')
 
