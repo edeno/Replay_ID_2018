@@ -1,13 +1,11 @@
-import itertools
 import logging
 import sys
 from os.path import join
 
 import matplotlib.pyplot as plt
 import pandas as pd
-import xarray as xr
 
-from src.parameters import FIGURE_DIR, PROCESSED_DATA_DIR, USE_LIKELIHOODS
+from src.parameters import FIGURE_DIR, PROCESSED_DATA_DIR
 from src.visualization import (compare_jaccard_similarity_of_replays,
                                compare_similarity_of_overlapping_replays,
                                compare_time_difference_of_overlapping_replays,
