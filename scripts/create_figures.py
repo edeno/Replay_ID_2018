@@ -15,13 +15,6 @@ from src.visualization import (compare_jaccard_similarity_of_replays,
                                plot_data_source_counts,
                                plot_proportion_events_by_data_source)
 
-COLUMNS = ['animal', 'day', 'epoch',
-           'replay_type', 'replay_motion_type', 'replay_movement_distance',
-           'credible_interval_size', 'data_source', 'duration',
-           'pct_unique_spiking', 'pct_total_spikes']
-
-logging.basicConfig(level='INFO')
-
 
 def _add_name(figure_name, name=None):
     if name is None:
@@ -92,46 +85,21 @@ def save_replay_info_figures(replay_info, name=None):
         plt.savefig(figure_name)
 
 
-def _preprocess(ds):
-    return ds[COLUMNS]
-
-
 def main():
     logging.info('Gathering replay info...')
-    filenames = join(PROCESSED_DATA_DIR, '*.nc')
-    replay_info = pd.concat(
-        [xr.open_mfdataset(
-            filenames, group=f'{name}/replay_info', autoclose=True,
-            preprocess=_preprocess, parallel=True,
-        ).to_dataframe()
-            for name in USE_LIKELIHOODS])
+    replay_info = pd.read_csv(join(PROCESSED_DATA_DIR, 'replay_info.csv'))
 
     logging.info('Comparing all replay events...')
     save_replay_info_figures(replay_info)
-    logging.info(replay_info.info(verbose=False, memory_usage='deep'))
-
-    logging.info('Gathering overlap info...')
-    names = list(USE_LIKELIHOODS)
-    combination = itertools.combinations(names, 2)
-    overlap_info = []
-
-    for name1, name2 in combination:
-        overlap_info.append(xr.open_mfdataset(
-            filenames, group=f'/overlap/{name1}/{name2}', autoclose=True,
-            parallel=True,
-        ).to_dataframe())
-
-    overlap_info = pd.concat(overlap_info)
 
     logging.info('Comparing overlapping replay events...')
+    overlap_info = pd.read_csv(join(PROCESSED_DATA_DIR, 'overlap_info.csv'))
     save_overlap_figures(overlap_info, replay_info)
 
     overlap_grouper = overlap_info.groupby('animal')
     replay_grouper = replay_info.groupby('animal')
     for (animal_name, oi), (_, ri) in zip(overlap_grouper, replay_grouper):
         save_overlap_figures(oi, ri, name=animal_name)
-
-    logging.info(overlap_info.info(verbose=False, memory_usage='deep'))
 
     logging.info('Comparing non-overlapping replay events...')
     grouper = overlap_info.groupby(['data_source1', 'data_source2'])
@@ -143,10 +111,6 @@ def main():
              (replay_info.data_source == name2)))
         name = f'no_overlap_{name1}_vs_{name2}'
         save_replay_info_figures(replay_info[is_not_overlap], name)
-
-    logging.info('Saving dataframes...')
-    replay_info.to_csv('replay_info.csv', mode='w')
-    overlap_info.to_csv('overlap_info.csv', mode='w')
 
     logging.info('Done...')
 

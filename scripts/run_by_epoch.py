@@ -91,6 +91,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
                                                   data_source)
+        # TODO: Handle case with no replays np.all(is_replay.replay_number == 0)
         decoder_results, _ = decode_replays(
             data, replay_detector, is_replay, replay_info, sampling_frequency,
             position_metric)
