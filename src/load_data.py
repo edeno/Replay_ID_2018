@@ -10,7 +10,7 @@ from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          get_interpolated_position_dataframe,
                                          get_LFPs, make_neuron_dataframe,
                                          make_tetrode_dataframe)
-from ripple_detection import Kay_ripple_detector
+from ripple_detection import Kay_ripple_detector, filter_ripple_band
 from spectral_connectivity import Connectivity, Multitaper
 from src.parameters import PROCESSED_DATA_DIR
 
@@ -93,6 +93,11 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
     ripple_times.index = ripple_times.index.rename('replay_number')
     ripple_labels = get_ripple_labels(ripple_times, time)
 
+    ripple_band_lfps = pd.DataFrame(
+        np.stack([filter_ripple_band(lfps.values[:, ind])
+                  for ind in np.arange(lfps.shape[1])], axis=1),
+        index=lfps.index)
+
     ripple_times = ripple_times.assign(
         duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
 
@@ -104,6 +109,8 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
         'power': power,
         'spikes': spikes,
         'multiunit': multiunit,
+        'lfps': lfps,
+        'ripple_band_lfps': ripple_band_lfps,
     }
 
 

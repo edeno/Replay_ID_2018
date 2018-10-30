@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import seaborn as sns
 
 from .parameters import USE_LIKELIHOODS
@@ -286,3 +287,90 @@ def plot_detector_posteriors(replay_densities, col_wrap=5):
     if n_plots < axes.size:
         for ax in axes.flat[n_plots:]:
             ax.axis('off')
+
+
+def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
+                          spikes_detector_results,
+                          lfp_power_detector_results,
+                          epoch_key,
+                          sampling_frequency=1500,
+                          offset=pd.Timedelta(0.250, 's'),
+                          position_metric='linear_distance',
+                          speed_metric='linear_speed'):
+
+    start_time = replay_info.loc[replay_number].start_time - offset
+    end_time = replay_info.loc[replay_number].end_time + offset
+
+    is_ripple = data['is_ripple'].loc[start_time:end_time].squeeze()
+    position_info = data['position_info'].loc[start_time:end_time]
+    spikes = data['spikes'].loc[start_time:end_time]
+    place_fields = (replay_detector
+                    ._spiking_likelihood
+                    .keywords['place_conditional_intensity'].T
+                    * sampling_frequency)
+    lfps = data['lfps'].loc[start_time:end_time]
+    lfps /= np.ptp(lfps, axis=0)
+    ripple_band_lfps = data['ripple_band_lfps'].loc[start_time:end_time]
+    ripple_band_lfps /= np.ptp(data['ripple_band_lfps'], axis=0)
+    mean_power = data['power'].mean(axis=0).values
+    power = data['power'].loc[start_time:end_time].dropna() / mean_power
+    place_bin_centers = replay_detector.place_bin_centers
+    time = position_info.index.total_seconds()
+
+    spike_results = (spikes_detector_results
+                     .sel(time=slice(start_time, end_time), state='Replay')
+                     .assign_coords(
+                        time=lambda ds: ds.time / np.timedelta64(1, 's')))
+    lfp_results = (lfp_power_detector_results
+                   .sel(time=slice(start_time, end_time), state='Replay')
+                   .assign_coords(
+                        time=lambda ds: ds.time / np.timedelta64(1, 's')))
+
+    fig, axes = plt.subplots(7, 1, figsize=(12, 14),
+                             constrained_layout=True, sharex=True)
+
+    axes[0].plot(time, is_ripple,
+                 label='ripple', linewidth=3)
+    lfp_results.replay_probability.plot(x='time', label='lfp_power',
+                                        ax=axes[0], linewidth=3)
+    spike_results.replay_probability.plot(x='time', label='spikes',
+                                          ax=axes[0], linewidth=3)
+
+    axes[0].axhline(0.8, linestyle='--', color='black')
+    axes[0].set_title('')
+    axes[0].legend()
+
+    spike_results.posterior.plot(x='time', y='position',
+                                 vmin=0.0, robust=True, ax=axes[1])
+    axes[1].plot(position_info.index.total_seconds(),
+                 position_info[position_metric].values,
+                 linewidth=3, linestyle='--', color='white')
+    axes[1].set_title('')
+
+    plot_replay_spiking_ordered_by_place_fields(
+        spikes.values, place_fields, place_bin_centers, ax=axes[2],
+        time=time)
+
+    for lfp_ind, lfp in enumerate(lfps.values.T):
+        axes[3].plot(time, lfp + lfp_ind + 1)
+    axes[3].set_ylabel('LFP')
+
+    axes[4].semilogy(power.index.total_seconds(), power.values,
+                     linewidth=3)
+    axes[4].axhline(1, color='black', linestyle='--')
+    axes[4].set_ylabel('Ripple Band\nPower Change')
+
+    for lfp_ind, lfp in enumerate(ripple_band_lfps.values.T):
+        axes[5].plot(time, lfp + lfp_ind + 1)
+    axes[5].set_ylabel('Ripple\nBandpassed LFP')
+
+    axes[6].plot(time,
+                 position_info[speed_metric].values,
+                 linewidth=3)
+    axes[6].axhline(4, color='black', linestyle='--')
+    axes[6].set_ylabel('Speed')
+
+    animal, day, epoch = epoch_key
+    plt.suptitle(
+        f'replay_number = {animal}_{day:02d}_{epoch:02d}_{replay_number:03d}',
+        fontsize=14, y=1.02)
