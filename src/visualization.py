@@ -206,14 +206,15 @@ def plot_replay_by_place_field(spikes, place_field_firing_rates,
 
 def plot_replay_spiking_ordered_by_place_fields(
         spikes, place_field_firing_rates, place_bin_centers,
-        ax=None, cmap=None, sampling_frequency=1):
+        ax=None, cmap=None, sampling_frequency=1, time=None):
 
     ax = ax or plt.gca()
     cmap = cmap or 'hsv'
 
     n_time, n_neurons = spikes.shape
     n_place_bins = place_bin_centers.size
-    time = np.arange(n_time) / sampling_frequency
+    if time is None:
+        time = np.arange(n_time) / sampling_frequency
 
     cmap = plt.get_cmap(cmap)
     place_colors = cmap(np.linspace(0.0, 1.0, n_place_bins))
