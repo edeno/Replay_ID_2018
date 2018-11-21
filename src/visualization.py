@@ -296,7 +296,8 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
                           sampling_frequency=1500,
                           offset=pd.Timedelta(0.250, 's'),
                           position_metric='linear_distance',
-                          speed_metric='linear_speed'):
+                          speed_metric='linear_speed',
+                          is_relative_time=False):
 
     start_time = replay_info.loc[replay_number].start_time - offset
     end_time = replay_info.loc[replay_number].end_time + offset
@@ -315,7 +316,13 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
     mean_power = data['power'].mean(axis=0).values
     power = data['power'].loc[start_time:end_time].dropna() / mean_power
     place_bin_centers = replay_detector.place_bin_centers
+
     time = position_info.index.total_seconds()
+    power_time = power.index.total_seconds()
+
+    if is_relative_time:
+        time -= start_time.total_seconds()
+        power_time -= start_time.total_seconds()
 
     spike_results = (spikes_detector_results
                      .sel(time=slice(start_time, end_time), state='Replay')
@@ -355,7 +362,7 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
         axes[3].plot(time, lfp + lfp_ind + 1)
     axes[3].set_ylabel('LFP')
 
-    axes[4].semilogy(power.index.total_seconds(), power.values,
+    axes[4].semilogy(power_time, power.values,
                      linewidth=3)
     axes[4].axhline(1, color='black', linestyle='--')
     axes[4].set_ylabel('Ripple Band\nPower Change')
@@ -368,9 +375,12 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
                  position_info[speed_metric].values,
                  linewidth=3)
     axes[6].axhline(4, color='black', linestyle='--')
-    axes[6].set_ylabel('Speed')
+    axes[6].set_ylabel('Speed (m/s)')
 
     animal, day, epoch = epoch_key
     plt.suptitle(
         f'replay_number = {animal}_{day:02d}_{epoch:02d}_{replay_number:03d}',
-        fontsize=14, y=1.02)
+        fontsize=14, y=1.01)
+    axes[-1].set_xlabel('Time (s)')
+
+    return fig, axes
