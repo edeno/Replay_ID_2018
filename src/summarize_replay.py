@@ -30,7 +30,7 @@ def duration(df):
 
 
 def get_replay_times(results, probability_threshold=0.8,
-                     minimum_duration=0.015):
+                     minimum_duration=0.000):
 
     replay_labels = label(
         results.replay_probability > probability_threshold)[0]
