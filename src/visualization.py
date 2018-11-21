@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
 import numpy as np
 import pandas as pd
 import seaborn as sns
@@ -184,7 +185,9 @@ def plot_replay_by_place_field(spikes, place_field_firing_rates,
 
     '''
     ax = ax or plt.gca()
-    cmap = cmap or 'hsv'
+    AVG_PLACE_FIELD_SIZE = 25
+    n_colors = int(np.ceil(np.ptp(place_bin_centers) / AVG_PLACE_FIELD_SIZE))
+    cmap = cmap or ListedColormap(sns.color_palette('hls', n_colors))
 
     cmap = plt.get_cmap(cmap)
     place_colors = cmap(np.linspace(0.0, 1.0, place_bin_centers.size))
@@ -210,23 +213,25 @@ def plot_replay_spiking_ordered_by_place_fields(
         ax=None, cmap=None, sampling_frequency=1, time=None):
 
     ax = ax or plt.gca()
-    cmap = cmap or 'hsv'
+    AVG_PLACE_FIELD_SIZE = 25
+    n_colors = int(np.ceil(np.ptp(place_bin_centers) / AVG_PLACE_FIELD_SIZE))
+    cmap = cmap or ListedColormap(sns.color_palette('hls', n_colors))
 
     n_time, n_neurons = spikes.shape
-    n_place_bins = place_bin_centers.size
     if time is None:
         time = np.arange(n_time) / sampling_frequency
 
     cmap = plt.get_cmap(cmap)
-    place_colors = cmap(np.linspace(0.0, 1.0, n_place_bins))
     neuron_to_place_bin = np.argmax(place_field_firing_rates, axis=1)
     ordered_place_field_to_neuron = np.argsort(neuron_to_place_bin)
     neuron_to_ordered_place_field = np.argsort(ordered_place_field_to_neuron)
 
     time_ind, neuron_ind = np.nonzero(spikes)
-
-    ax.scatter(time[time_ind], neuron_to_ordered_place_field[neuron_ind],
-               c=place_colors[neuron_to_place_bin[neuron_ind]])
+    im = ax.scatter(time[time_ind], neuron_to_ordered_place_field[neuron_ind],
+                    c=place_bin_centers[neuron_to_place_bin[neuron_ind]],
+                    cmap=cmap, vmin=np.floor(place_bin_centers.min()),
+                    vmax=np.ceil(place_bin_centers.max()))
+    plt.colorbar(im, ax=ax, label='position')
 
     ax.set_xlim(time[[0, -1]])
     ax.set_xlabel('Time')
@@ -235,7 +240,7 @@ def plot_replay_spiking_ordered_by_place_fields(
     ax.set_yticklabels(ordered_place_field_to_neuron)
     sns.despine()
 
-    return ax
+    return ax, im
 
 
 def plot_replay_position_by_spikes(
