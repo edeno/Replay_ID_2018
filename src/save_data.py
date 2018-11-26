@@ -7,11 +7,11 @@ from src.parameters import PROCESSED_DATA_DIR
 def save_replay_data(data_source, epoch_key, replay_info, replay_densities,
                      is_replay, use_smoother):
     decoder_type = 'smoother' if use_smoother else 'filter'
-    replay_densities = (replay_densities
-                        .drop(['detector_likelihood', 'detector_posterior'])
-                        .sum('state'))
-    save_xarray(PROCESSED_DATA_DIR, epoch_key, replay_densities,
-                f'{decoder_type}/{data_source}/replay_densities')
+    # replay_densities = (replay_densities
+    #                     .drop(['detector_likelihood', 'detector_posterior'])
+    #                     .sum('state'))
+    # save_xarray(PROCESSED_DATA_DIR, epoch_key, replay_densities,
+    #             f'{decoder_type}/{data_source}/replay_densities')
     save_xarray(PROCESSED_DATA_DIR, epoch_key,
                 replay_info.to_xarray(),
                 f'{decoder_type}/{data_source}/replay_info')
