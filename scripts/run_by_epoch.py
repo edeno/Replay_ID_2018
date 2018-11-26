@@ -20,6 +20,62 @@ from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
 from src.visualization import plot_behavior
 
 
+def decode(data, replay_detector, use_likelihoods, epoch_key,
+           sampling_frequency, use_smoother, position_metric, speed_metric):
+    data_sources = []
+    labels = []
+    infos = []
+
+    for data_source, likelihoods in use_likelihoods.items():
+        logging.info(f'Finding replays with {data_source}...')
+        if data_source != 'ripple':
+            detector_results = replay_detector.predict(
+                speed=data['position_info'][speed_metric],
+                position=data['position_info'][position_metric],
+                lfp_power=data['power'],
+                spikes=data['spikes'], multiunit=data['multiunit'],
+                time=data['position_info'].index,
+                use_likelihoods=likelihoods,
+                use_smoother=use_smoother)
+            replay_info, is_replay = get_replay_times(detector_results)
+        else:
+            replay_info = data['ripple_times'].copy()
+            is_replay = data['ripple_labels'].copy()
+            detector_results *= np.nan
+
+        logging.info(f'Classifying replays with {data_source}...')
+        replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
+                                                  data_source)
+
+        decoder_results, _ = decode_replays(
+            data, replay_detector, is_replay, replay_info, sampling_frequency,
+            position_metric)
+        logging.info(f'Summarizing replays with {data_source}...')
+        replay_info, replay_densities = summarize_replays(
+            replay_info, detector_results, decoder_results, data,
+            position_metric)
+
+        # Save Data
+        save_replay_data(data_source, epoch_key, replay_info, replay_densities,
+                         is_replay, use_smoother)
+        data_sources.append(data_source)
+        labels.append(is_replay.replay_number)
+        infos.append(replay_info)
+
+    comb = itertools.combinations(zip(labels, infos, data_sources), 2)
+    for (labels1, info1, data_source1), (labels2, info2, data_source2) in comb:
+        logging.info(
+            'Analyzing replay overlap between'
+            f'{data_source1} and {data_source2}...')
+        overlap_info = compare_overlap(
+            labels1, labels2, info1, info2, SAMPLING_FREQUENCY,
+            epoch_key, data_source1, data_source2)
+        if overlap_info.shape[0] == 0:
+            logging.warn('No overlap detected.')
+        save_overlap(
+            overlap_info, epoch_key, data_source1, data_source2, use_smoother)
+
+
 def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
                  position_metric='linear_distance',
                  speed_metric='linear_speed'):
@@ -68,55 +124,10 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         figure_name = f'fitted_multiunit_{animal}_{day:02d}_{epoch:02d}.png'
         plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
-    data_sources = []
-    labels = []
-    infos = []
-
-    for data_source, likelihoods in use_likelihoods.items():
-        logging.info(f'Finding replays with {data_source}...')
-        if data_source != 'ripple':
-            detector_results = replay_detector.predict(
-                speed=data['position_info'][speed_metric],
-                position=data['position_info'][position_metric],
-                lfp_power=data['power'],
-                spikes=data['spikes'], multiunit=data['multiunit'],
-                time=data['position_info'].index,
-                use_likelihoods=likelihoods)
-            replay_info, is_replay = get_replay_times(detector_results)
-        else:
-            replay_info = data['ripple_times'].copy()
-            is_replay = data['ripple_labels'].copy()
-            detector_results *= np.nan
-
-        logging.info(f'Classifying replays with {data_source}...')
-        replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
-                                                  data_source)
-        # TODO: Handle case with no replays np.all(is_replay.replay_number == 0)
-        decoder_results, _ = decode_replays(
-            data, replay_detector, is_replay, replay_info, sampling_frequency,
-            position_metric)
-        logging.info(f'Summarizing replays with {data_source}...')
-        replay_info, replay_densities = summarize_replays(
-            replay_info, detector_results, decoder_results, data,
-            position_metric)
-
-        # Save Data
-        save_replay_data(data_source, epoch_key, replay_info, replay_densities,
-                         is_replay)
-        data_sources.append(data_source)
-        labels.append(is_replay.replay_number)
-        infos.append(replay_info)
-
-    combination = itertools.combinations(zip(labels, infos, data_sources), 2)
-    for (labels1, info1, name1), (labels2, info2, name2) in combination:
-        logging.info(
-            f'Analyzing replay overlap between {name1} and {name2}...')
-        overlap_info = compare_overlap(
-            labels1, labels2, info1, info2, SAMPLING_FREQUENCY,
-            epoch_key, name1, name2)
-        if overlap_info.shape[0] == 0:
-            logging.warn('No overlap detected.')
-        save_overlap(overlap_info, epoch_key, name1, name2)
+    decode(data, replay_detector, use_likelihoods, epoch_key,
+           sampling_frequency, True, position_metric, speed_metric)
+    decode(data, replay_detector, use_likelihoods, epoch_key,
+           sampling_frequency, False, position_metric, speed_metric)
     logging.info('Done...')
 
 
