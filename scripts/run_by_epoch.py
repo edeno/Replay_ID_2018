@@ -49,7 +49,7 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
 
         decoder_results, _ = decode_replays(
             data, replay_detector, is_replay, replay_info, sampling_frequency,
-            position_metric)
+            position_metric, use_smoother)
         logging.info(f'Summarizing replays with {data_source}...')
         replay_info, replay_densities = summarize_replays(
             replay_info, detector_results, decoder_results, data,

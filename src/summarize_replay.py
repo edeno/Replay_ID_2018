@@ -140,7 +140,8 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
 
 
 def decode_replays(data, replay_detector, is_replay, replay_info,
-                   sampling_frequency, position_metric='linear_distance'):
+                   sampling_frequency, position_metric='linear_distance',
+                   use_smoother=True):
     initial_conditions = {
         'linear_distance': 'Uniform',
         'linear_position': 'Uniform',
@@ -165,7 +166,8 @@ def decode_replays(data, replay_detector, is_replay, replay_info,
 
     decoder_results = [
         decoder.predict(test_spikes.loc[replay_number].values,
-                        test_spikes.loc[replay_number].index)
+                        test_spikes.loc[replay_number].index,
+                        use_smoother=use_smoother)
         for replay_number in replay_info.index]
 
     return decoder_results, decoder
