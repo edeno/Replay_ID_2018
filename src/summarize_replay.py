@@ -153,6 +153,7 @@ def decode_replays(data, replay_detector, is_replay, replay_info,
         replay_speedup_factor=replay_detector.replay_speed,
         knot_spacing=replay_detector.spike_model_knot_spacing,
         spike_model_penalty=replay_detector.spike_model_penalty,
+        replay_orders=['Forward', 'Reverse'],
     ).fit(
         position=data['position_info'][position_metric].values,
         experimental_condition=data['position_info'].task.values,
