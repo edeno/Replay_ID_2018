@@ -297,6 +297,7 @@ def plot_detector_posteriors(replay_densities, col_wrap=5):
 def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
                           spikes_detector_results,
                           lfp_power_detector_results,
+                          multunit_detector_results,
                           epoch_key,
                           sampling_frequency=1500,
                           offset=pd.Timedelta(0.250, 's'),
@@ -308,8 +309,12 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
     end_time = replay_info.loc[replay_number].end_time + offset
 
     is_ripple = data['is_ripple'].loc[start_time:end_time].squeeze()
+    is_multiunit_high_synchrony = (data['is_multiunit_high_synchrony']
+                                   .loc[start_time:end_time].squeeze())
     position_info = data['position_info'].loc[start_time:end_time]
     spikes = data['spikes'].loc[start_time:end_time]
+    multiunit_firing_rate = (
+        data['multiunit_firing_rate'].loc[start_time:end_time].squeeze())
     place_fields = (replay_detector
                     ._spiking_likelihood
                     .keywords['place_conditional_intensity'].T
@@ -332,21 +337,28 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
     spike_results = (spikes_detector_results
                      .sel(time=slice(start_time, end_time), state='Replay')
                      .assign_coords(
-                        time=lambda ds: ds.time / np.timedelta64(1, 's')))
+                         time=lambda ds: ds.time / np.timedelta64(1, 's')))
     lfp_results = (lfp_power_detector_results
                    .sel(time=slice(start_time, end_time), state='Replay')
                    .assign_coords(
-                        time=lambda ds: ds.time / np.timedelta64(1, 's')))
-
-    fig, axes = plt.subplots(7, 1, figsize=(12, 14),
+                       time=lambda ds: ds.time / np.timedelta64(1, 's')))
+    multiunit_results = (multunit_detector_results
+                         .sel(time=slice(start_time, end_time), state='Replay')
+                         .assign_coords(
+                             time=lambda ds: ds.time / np.timedelta64(1, 's')))
+    fig, axes = plt.subplots(8, 1, figsize=(12, 16),
                              constrained_layout=True, sharex=True)
 
     axes[0].plot(time, is_ripple,
-                 label='ripple', linewidth=3)
+                 label='Ad-hoc ripple', linewidth=3)
+    axes[0].plot(time, is_multiunit_high_synchrony,
+                 label='Ad-hoc multiunit HSE', linewidth=3)
     lfp_results.replay_probability.plot(x='time', label='lfp_power',
                                         ax=axes[0], linewidth=3)
     spike_results.replay_probability.plot(x='time', label='spikes',
                                           ax=axes[0], linewidth=3)
+    multiunit_results.replay_probability.plot(x='time', label='multiunit',
+                                              ax=axes[0], linewidth=3)
 
     axes[0].axhline(0.8, linestyle='--', color='black')
     axes[0].set_title('')
@@ -359,28 +371,33 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
                  linewidth=3, linestyle='--', color='white')
     axes[1].set_title('')
 
+    multiunit_results.posterior.plot(x='time', y='position',
+                                     vmin=0.0, robust=True, ax=axes[2])
+    axes[2].plot(position_info.index.total_seconds(),
+                 position_info[position_metric].values,
+                 linewidth=3, linestyle='--', color='white')
+    axes[2].set_title('')
+
     plot_replay_spiking_ordered_by_place_fields(
-        spikes.values, place_fields, place_bin_centers, ax=axes[2],
+        spikes.values, place_fields, place_bin_centers, ax=axes[3],
         time=time)
 
-    for lfp_ind, lfp in enumerate(lfps.values.T):
-        axes[3].plot(time, lfp + lfp_ind + 1)
-    axes[3].set_ylabel('LFP')
+    axes[4].plot(time, multiunit_firing_rate.values)
+    axes[4].set_ylabel('Multiunit firing rate (spikes / s)')
 
-    axes[4].semilogy(power_time, power.values,
-                     linewidth=3)
-    axes[4].axhline(1, color='black', linestyle='--')
-    axes[4].set_ylabel('Ripple Band\nPower Change')
+    for lfp_ind, lfp in enumerate(lfps.values.T):
+        axes[5].plot(time, lfp + lfp_ind + 1)
+    axes[5].set_ylabel('LFP')
 
     for lfp_ind, lfp in enumerate(ripple_band_lfps.values.T):
-        axes[5].plot(time, lfp + lfp_ind + 1)
-    axes[5].set_ylabel('Ripple\nBandpassed LFP')
+        axes[6].plot(time, lfp + lfp_ind + 1)
+    axes[6].set_ylabel('Ripple\nBandpassed LFP')
 
-    axes[6].plot(time,
+    axes[7].plot(time,
                  position_info[speed_metric].values,
                  linewidth=3)
-    axes[6].axhline(4, color='black', linestyle='--')
-    axes[6].set_ylabel('Speed (m/s)')
+    axes[7].axhline(4, color='black', linestyle='--')
+    axes[7].set_ylabel('Speed (m/s)')
 
     animal, day, epoch = epoch_key
     plt.suptitle(
