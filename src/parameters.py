@@ -30,7 +30,6 @@ ANIMALS = {
 USE_LIKELIHOODS = OrderedDict(
     [('lfp_power', ['lfp_power']),
      ('spikes', ['spikes']),
-     ('spikes_and_lfp_power', ['spikes', 'lfp_power']),
      ('multiunit', ['multiunit']),
      ('ripple', ['ripple'])]
 )
