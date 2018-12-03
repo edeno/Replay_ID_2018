@@ -76,7 +76,6 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
               .reindex(time))
 
     if 'multiunit' in data_types:
-
         tetrode_keys = tetrode_info.loc[
             (tetrode_info.numcells > 0) & is_brain_areas].index
         multiunit = (get_all_multiunit_indicators(tetrode_keys, animals)
