@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from matplotlib.colors import ListedColormap
 
 from .parameters import USE_LIKELIHOODS
 
@@ -105,7 +105,7 @@ def compare_time_difference_of_overlapping_replays(
           color='blue', linewidth=3, zorder=100, linestyle='--')
     g.map(sns.distplot, time_difference, hist=False, rug=False, kde_kws=kde_kws
           ).set_titles(
-            '{row_name} < {col_name} | {row_name} > {col_name}', size=12)
+        '{row_name} < {col_name} | {row_name} > {col_name}', size=12)
     g.set(xlim=(-0.2, 0.2))
 
     for row_ind, column_ind in zip(*np.tril_indices_from(g.axes, 0)):
