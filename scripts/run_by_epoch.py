@@ -126,8 +126,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
 
     decode(data, replay_detector, use_likelihoods, epoch_key,
            sampling_frequency, True, position_metric, speed_metric)
-    decode(data, replay_detector, use_likelihoods, epoch_key,
-           sampling_frequency, False, position_metric, speed_metric)
+
     logging.info('Done...')
 
 
