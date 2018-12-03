@@ -21,17 +21,20 @@ def _preprocess(ds):
     return ds[COLUMNS]
 
 
-def main():
+def collect_data(use_smoother=True):
+    decoder_type = 'smoother' if use_smoother else 'filter'
     logging.info('Gathering replay info...')
     filenames = join(PROCESSED_DATA_DIR, '*.nc')
     replay_info = pd.concat(
         [xr.open_mfdataset(
-            filenames, group=f'{name}/replay_info', autoclose=True,
-            preprocess=_preprocess, parallel=True).to_dataframe()
-         for name in USE_LIKELIHOODS])
+            filenames, group=f'{decoder_type}/{data_source}/replay_info',
+            autoclose=True, preprocess=_preprocess,
+            parallel=True).to_dataframe()
+         for data_source in USE_LIKELIHOODS])
 
     logging.info(replay_info.info(verbose=False, memory_usage='deep'))
-    replay_info_path = join(PROCESSED_DATA_DIR, 'replay_info.csv')
+    replay_info_path = join(
+        PROCESSED_DATA_DIR, f'{decoder_type}_replay_info.csv')
     replay_info.to_csv(replay_info_path, mode='w')
 
     logging.info('Gathering overlap info...')
@@ -39,19 +42,26 @@ def main():
     combination = itertools.combinations(names, 2)
     overlap_info = []
 
-    for name1, name2 in combination:
-        logging.info('...{name1} vs {name2}')
+    for data_source1, data_source2 in combination:
+        logging.info(f'...{data_source1} vs {data_source2}')
+        group = f'{decoder_type}/overlap/{data_source1}/{data_source2}'
         overlap_info.append(xr.open_mfdataset(
-            filenames, group=f'/overlap/{name1}/{name2}', autoclose=True,
+            filenames, group=group, autoclose=True,
             parallel=True).to_dataframe())
 
     overlap_info = pd.concat(overlap_info)
 
     logging.info(overlap_info.info(verbose=False, memory_usage='deep'))
-    overlap_info_path = join(PROCESSED_DATA_DIR, 'overlap_info.csv')
+    overlap_info_path = join(
+        PROCESSED_DATA_DIR, f'{decoder_type}_overlap_info.csv')
     overlap_info.to_csv(overlap_info_path, mode='w')
 
     logging.info('Done...')
+
+
+def main():
+    collect_data(use_smoother=True)
+    collect_data(use_smoother=False)
 
 
 if __name__ == '__main__':
