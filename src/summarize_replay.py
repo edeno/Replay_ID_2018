@@ -51,6 +51,7 @@ def get_replay_times(results, probability_threshold=0.8,
 
 
 def summarize_replays(replay_info, detector_results, decoder_results, data,
+                      sampling_frequency=1500,
                       position_metric='linear_distance'):
     MOTION_BOUNDS = [-np.inf, -50, 50, np.inf]
 
@@ -71,6 +72,7 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     pct_unique_spiking = []
     n_total_spikes = []
     pct_total_spikes = []
+    avg_replay_speed = []
 
     for r, decoder_result in zip(replay_info.itertuples(), decoder_results):
         # Get detector posterior
@@ -101,6 +103,9 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
 
         # How confident are we?
         credible_interval_size.append(_average_credible_interval_size(density))
+        # Replay speed
+        avg_replay_speed.append(np.mean(np.abs(_get_replay_velocity(
+            density, sampling_frequency))))
 
         # Add stats about spikes
         n_unique = _n_unique_spiking(decoder_result.spikes)
@@ -119,11 +124,11 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
         replay_info['replay_motion_slope'], MOTION_BOUNDS,
         labels=['Towards', 'Neither', 'Away'])
     replay_info['replay_movement_distance'] = replay_movement_distance
-    replay_info['credible_interval_size'] = credible_interval_size
     replay_info['n_unique_spiking'] = n_unique_spiking
     replay_info['pct_unique_spiking'] = pct_unique_spiking
     replay_info['n_spikes'] = n_total_spikes
     replay_info['pct_total_spikes'] = pct_total_spikes
+    replay_info['avg_replay_speed'] = avg_replay_speed
 
     detector_posterior = (xr.concat(detector_posterior, dim=replay_info.index)
                           .rename('detector_posterior'))
@@ -204,6 +209,12 @@ def _get_replay_movement(posterior_density):
     replay_position = posterior_density.position.values[
         np.log(posterior_density).argmax('position').values]
     return np.diff(np.quantile(replay_position, [0.25, 0.75]))[0]
+
+
+def _get_replay_velocity(posterior_density, sampling_frequency):
+    replay_position = posterior_density.position.values[
+        np.log(posterior_density).argmax('position').values]
+    return np.diff(replay_position) * sampling_frequency
 
 
 def _average_credible_interval_size(posterior_density):
