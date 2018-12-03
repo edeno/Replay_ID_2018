@@ -10,7 +10,9 @@ from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          get_interpolated_position_dataframe,
                                          get_LFPs, make_neuron_dataframe,
                                          make_tetrode_dataframe)
-from ripple_detection import Kay_ripple_detector, filter_ripple_band
+from ripple_detection import (Kay_ripple_detector, filter_ripple_band,
+                              get_multiunit_population_firing_rate,
+                              multiunit_HSE_detector)
 from spectral_connectivity import Connectivity, Multitaper
 from src.parameters import PROCESSED_DATA_DIR
 
@@ -75,19 +77,32 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
     spikes = (get_all_spike_indicators(neuron_info.index, animals)
               .reindex(time))
 
-    if 'multiunit' in data_types:
-        tetrode_keys = tetrode_info.loc[
-            (tetrode_info.numcells > 0) & is_brain_areas].index
-        multiunit = (get_all_multiunit_indicators(tetrode_keys, animals)
-                     .sel(features=_MARKS)
-                     .reindex({'time': time}))
-    else:
+    logger.info('Finding multiunit high synchrony events...')
+    tetrode_keys = tetrode_info.loc[
+        (tetrode_info.numcells > 0) & is_brain_areas].index
+    multiunit = (get_all_multiunit_indicators(tetrode_keys, animals)
+                 .sel(features=_MARKS)
+                 .reindex({'time': time}))
+    multiunit_spikes = (np.any(~np.isnan(multiunit), axis=1).values).astype(
+        np.float)
+    multiunit_high_synchrony_times = multiunit_HSE_detector(
+        time, multiunit_spikes, speed.values, sampling_frequency,
+        minimum_duration=np.timedelta64(15, 'ms'), zscore_threshold=2.0,
+        close_event_threshold=np.timedelta64(0, 'ms'))
+    multiunit_high_synchrony_times.index = (
+        multiunit_high_synchrony_times.index.rename('replay_number'))
+    multiunit_high_synchrony_labels = get_ripple_labels(
+        multiunit_high_synchrony_times, time)
+    multiunit_firing_rate = pd.DataFrame(get_multiunit_population_firing_rate(
+        multiunit_spikes, sampling_frequency), index=time,
+        columns=['firing_rate'])
+    if 'multiunit' not in data_types:
         multiunit = None
 
     logger.info('Finding ripple times...')
     ripple_times = Kay_ripple_detector(
         time, lfps.values, speed.values, sampling_frequency,
-        zscore_threshold=2, close_ripple_threshold=np.timedelta64(0, 'ms'),
+        zscore_threshold=2.0, close_ripple_threshold=np.timedelta64(0, 'ms'),
         minimum_duration=np.timedelta64(15, 'ms'))
     ripple_times.index = ripple_times.index.rename('replay_number')
     ripple_labels = get_ripple_labels(ripple_times, time)
@@ -110,6 +125,9 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
         'multiunit': multiunit,
         'lfps': lfps,
         'ripple_band_lfps': ripple_band_lfps,
+        'multiunit_high_synchrony_times': multiunit_high_synchrony_times,
+        'is_multiunit_high_synchrony': multiunit_high_synchrony_labels > 0,
+        'multiunit_firing_rate': multiunit_firing_rate,
     }
 
 
