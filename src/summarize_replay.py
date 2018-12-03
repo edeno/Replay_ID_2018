@@ -101,8 +101,6 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
         # How far replay moves
         replay_movement_distance.append(_get_replay_movement(density))
 
-        # How confident are we?
-        credible_interval_size.append(_average_credible_interval_size(density))
         # Replay speed
         avg_replay_speed.append(np.mean(np.abs(_get_replay_velocity(
             density, sampling_frequency))))
@@ -218,8 +216,7 @@ def _get_replay_velocity(posterior_density, sampling_frequency):
 
 
 def _average_credible_interval_size(posterior_density):
-    credible_interval = np.percentile(posterior_density, [2.5, 97.5], axis=1)
-    return np.mean(np.diff(credible_interval, axis=0))
+    pass
 
 
 def _n_unique_spiking(spikes):
