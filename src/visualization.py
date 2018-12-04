@@ -297,7 +297,7 @@ def plot_detector_posteriors(replay_densities, col_wrap=5):
 def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
                           spikes_detector_results,
                           lfp_power_detector_results,
-                          multunit_detector_results,
+                          multiunit_detector_results,
                           epoch_key,
                           sampling_frequency=1500,
                           offset=pd.Timedelta(0.250, 's'),
@@ -342,7 +342,7 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
                    .sel(time=slice(start_time, end_time), state='Replay')
                    .assign_coords(
                        time=lambda ds: ds.time / np.timedelta64(1, 's')))
-    multiunit_results = (multunit_detector_results
+    multiunit_results = (multiunit_detector_results
                          .sel(time=slice(start_time, end_time), state='Replay')
                          .assign_coords(
                              time=lambda ds: ds.time / np.timedelta64(1, 's')))
