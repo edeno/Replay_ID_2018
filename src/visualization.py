@@ -238,6 +238,7 @@ def plot_replay_spiking_ordered_by_place_fields(
     ax.set_ylabel('Neurons')
     ax.set_yticks(np.arange(n_neurons))
     ax.set_yticklabels(ordered_place_field_to_neuron)
+    ax.set_ylim((-0.25, n_neurons - 1 + 0.25))
     sns.despine()
 
     return ax, im
