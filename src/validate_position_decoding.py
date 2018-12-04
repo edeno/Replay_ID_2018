@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from sklearn.metrics import mean_squared_error
 from sklearn.mixture import BayesianGaussianMixture
 from sklearn.model_selection import TimeSeriesSplit
@@ -7,10 +8,9 @@ from replay_classification.core import filter, smooth
 from replay_identification import ReplayDetector
 from replay_identification.multiunit_likelihood import \
     estimate_replay_log_likelihood
-from src.load_data import load_data
-from src.parameters import (ANIMALS, BRAIN_AREAS, SAMPLING_FREQUENCY)
 
-_DEFAULT_MODEL_KWARGS = dict(n_components=30, tol=1E-6, max_iter=200)
+_DEFAULT_MODEL_KWARGS = dict(n_components=30, tol=1E-6, max_iter=200,
+                             weight_concentration_prior=1E1)
 
 
 def predict_position_from_spikes(replay_detector, spikes, use_smoother):
@@ -54,13 +54,12 @@ def predict_position_from_multiunit(replay_detector, multiunits, use_smoother):
 
 
 def cross_validate_position_decoding(
-        epoch_key, multiunit_density_model=BayesianGaussianMixture,
+        data, multiunit_density_model=BayesianGaussianMixture,
         multiunit_model_kwargs=_DEFAULT_MODEL_KWARGS,
         position_metric='linear_distance', speed_metric='linear_speed',
         use_smoother=True, data_types={'multiunit'},
         n_splits=5):
-    data = load_data(epoch_key, ANIMALS, SAMPLING_FREQUENCY, data_types,
-                     BRAIN_AREAS, speed_metric)
+
     cv = TimeSeriesSplit(n_splits=n_splits)
     time = data['position_info'].index
     rmse = []
