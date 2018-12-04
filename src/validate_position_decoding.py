@@ -99,4 +99,5 @@ def cross_validate_position_decoding(
         rmse.append(np.sqrt(mean_squared_error(
             true_position, predicted_position)))
 
-    return rmse
+    return pd.DataFrame(rmse, columns=['root_mean_squared_error'],
+                        index=pd.Index(np.arange(n_splits) + 1, name='fold'))
