@@ -35,3 +35,36 @@ USE_LIKELIHOODS = OrderedDict(
 )
 
 BRAIN_AREAS = ['CA1', 'CA2', 'CA3']
+
+_10Hz_Res = dict(
+    sampling_frequency=SAMPLING_FREQUENCY,
+    time_window_duration=0.100,
+    time_window_step=0.100,
+    time_halfbandwidth_product=1,
+)
+_4Hz_Res = dict(
+    sampling_frequency=SAMPLING_FREQUENCY,
+    time_window_duration=0.250,
+    time_window_step=0.250,
+    time_halfbandwidth_product=1,
+)
+_2Hz_Res = dict(
+    sampling_frequency=SAMPLING_FREQUENCY,
+    time_window_duration=0.500,
+    time_window_step=0.500,
+    time_halfbandwidth_product=1,
+)
+
+_12Hz_Res = dict(
+    sampling_frequency=SAMPLING_FREQUENCY,
+    time_window_duration=0.250,
+    time_window_step=0.250,
+    time_halfbandwidth_product=3,
+)
+
+MULTITAPER_PARAMETERS = {
+    '2Hz_Resolution': _2Hz_Res,
+    '4Hz_Resolution': _4Hz_Res,
+    '10Hz_Resolution': _10Hz_Res,
+    '12Hz_Resolution': _12Hz_Res,
+}

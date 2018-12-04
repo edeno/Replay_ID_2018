@@ -12,10 +12,12 @@ import numpy as np
 from replay_identification import ReplayDetector
 from src.load_data import load_data
 from src.parameters import (ANIMALS, BRAIN_AREAS, FIGURE_DIR,
-                            SAMPLING_FREQUENCY, USE_LIKELIHOODS)
-from src.save_data import save_overlap, save_replay_data
+                            MULTITAPER_PARAMETERS, SAMPLING_FREQUENCY,
+                            USE_LIKELIHOODS)
+from src.save_data import save_overlap, save_power, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
+                                  get_replay_triggered_power,
                                   summarize_replays)
 from src.visualization import plot_behavior
 
@@ -54,6 +56,12 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
         replay_info, replay_densities = summarize_replays(
             replay_info, detector_results, decoder_results, data,
             position_metric)
+
+        power = get_replay_triggered_power(
+            data['lfps'], replay_info, data['tetrode_info'],
+            MULTITAPER_PARAMETERS['4Hz'], window_offset=(-0.250, 0.250),
+            sampling_frequency=SAMPLING_FREQUENCY)
+        save_power(power, epoch_key, use_smoother, data_source)
 
         # Save Data
         save_replay_data(data_source, epoch_key, replay_info, replay_densities,

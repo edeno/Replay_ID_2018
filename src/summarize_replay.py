@@ -9,6 +9,7 @@ from scipy.stats import linregress
 
 from loren_frank_data_processing import reshape_to_segments
 from replay_classification import SortedSpikeDecoder
+from spectral_connectivity import Multitaper, Connectivity
 
 logger = getLogger(__name__)
 
@@ -67,7 +68,6 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     replay_type_confidence = []
     motion_slope = []
     replay_movement_distance = []
-    credible_interval_size = []
     n_unique_spiking = []
     pct_unique_spiking = []
     n_total_spikes = []
@@ -341,3 +341,37 @@ def add_epoch_info_to_dataframe(df, epoch_key, data_source):
                        df.replay_number.astype(str).str.zfill(3) + '_' +
                        df.data_source)
     return df.set_index('replay_id')
+
+
+def _center_time(time):
+    time_diff = np.diff(time)[0] if np.diff(time).size > 0 else 0
+    return time + time_diff / 2
+
+
+def get_replay_triggered_power(lfps, replay_info, tetrode_info,
+                               multitaper_params,
+                               window_offset=(-0.250, 0.250),
+                               sampling_frequency=1500):
+    ripple_locked_lfps = reshape_to_segments(
+        lfps, replay_info.loc[:, ['start_time', 'end_time']],
+        window_offset=window_offset, sampling_frequency=sampling_frequency)
+    ripple_locked_lfps = (ripple_locked_lfps.to_xarray().to_array()
+                          .rename({'variable': 'tetrodes'})
+                          .transpose('time', 'ripple_number', 'tetrodes')
+                          .dropna('ripple_number'))
+    ripple_locked_lfps = (ripple_locked_lfps
+                          - ripple_locked_lfps.mean(['ripple_number']))
+    start_time = ripple_locked_lfps.time.min().values / np.timedelta64(1, 's')
+    m = Multitaper(ripple_locked_lfps.values, **multitaper_params,
+                   start_time=start_time)
+    c = Connectivity.from_multitaper(m)
+    dimension_names = ['time', 'frequency', 'tetrode']
+    data_vars = {
+        'power': (dimension_names, c.power())}
+    coordinates = {
+        'time': _center_time(c.time),
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'tetrode': tetrode_info.tetrode_id.values,
+        'brain_area': ('tetrode', tetrode_info.area.tolist()),
+    }
+    return xr.Dataset(data_vars, coords=coordinates)
