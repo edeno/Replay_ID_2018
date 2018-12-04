@@ -72,11 +72,11 @@ def cross_validate_position_decoding(
     for train_index, test_index in cv.split(time):
         train_is_replay = data['is_ripple'].iloc[train_index]
         train_position_info = data['position_info'].iloc[train_index]
-        if data['spikes'] is not None:
+        if 'spikes' in data_types:
             train_spikes = data['spikes'].iloc[train_index]
         else:
             train_spikes = None
-        if data['spikes'] is not None:
+        if 'multiunit' in data_types:
             train_multiunit = data['multiunit'].isel(time=train_index)
         else:
             train_multiunit = None
