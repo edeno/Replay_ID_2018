@@ -13,7 +13,7 @@ from src.parameters import (ANIMALS, BRAIN_AREAS, FIGURE_DIR,
                             SAMPLING_FREQUENCY, USE_LIKELIHOODS)
 from src.summarize_replay import get_replay_times
 from src.visualization import plot_replay_with_data
-from sklearn.mixture import BayesianGaussianMixture
+from src.misc import WhitenedKDE
 
 logging.basicConfig(level=logging.INFO)
 
@@ -25,8 +25,8 @@ def main(epoch_key, speed_metric='linear_speed',
                      BRAIN_AREAS, speed_metric)
 
     replay_detector = ReplayDetector(
-        multiunit_density_model=BayesianGaussianMixture,
-        multiunit_model_kwargs=dict(n_components=30))
+        multiunit_density_model=WhitenedKDE,
+        multiunit_model_kwargs=dict(bandwidth=1.10, kernel='epanechnikov'))
     replay_detector.fit(
         is_replay=data['is_ripple'], speed=data['position_info'].linear_speed,
         position=data['position_info'][position_metric],
