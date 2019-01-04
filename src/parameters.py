@@ -63,8 +63,8 @@ _12Hz_Res = dict(
 )
 
 MULTITAPER_PARAMETERS = {
-    '2Hz_Resolution': _2Hz_Res,
-    '4Hz_Resolution': _4Hz_Res,
-    '10Hz_Resolution': _10Hz_Res,
-    '12Hz_Resolution': _12Hz_Res,
+    '2Hz': _2Hz_Res,
+    '4Hz': _4Hz_Res,
+    '10Hz': _10Hz_Res,
+    '12Hz': _12Hz_Res,
 }
