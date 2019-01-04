@@ -2,6 +2,7 @@ import itertools
 import logging
 import sys
 from argparse import ArgumentParser
+from collections import OrderedDict
 from os.path import join
 
 import matplotlib.pyplot as plt
@@ -9,13 +10,19 @@ from tqdm.auto import tqdm
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
-from src.parameters import (ANIMALS, BRAIN_AREAS, FIGURE_DIR,
-                            SAMPLING_FREQUENCY, USE_LIKELIHOODS)
+from src.misc import WhitenedKDE
+from src.parameters import ANIMALS, BRAIN_AREAS, FIGURE_DIR, SAMPLING_FREQUENCY
 from src.summarize_replay import get_replay_times
 from src.visualization import plot_replay_with_data
-from src.misc import WhitenedKDE
 
 logging.basicConfig(level=logging.INFO)
+
+USE_LIKELIHOODS = OrderedDict(
+    [('lfp_power', ['lfp_power']),
+     ('spikes', ['spikes']),
+     ('multiunit', ['multiunit']),
+     ('ripple', ['ripple'])]
+)
 
 
 def main(epoch_key, speed_metric='linear_speed',
