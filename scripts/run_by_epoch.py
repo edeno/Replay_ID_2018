@@ -55,7 +55,7 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
         logging.info(f'Summarizing replays with {data_source}...')
         replay_info, replay_densities = summarize_replays(
             replay_info, detector_results, decoder_results, data,
-            position_metric)
+            SAMPLING_FREQUENCY, position_metric)
 
         power = get_replay_triggered_power(
             data['lfps'], replay_info, data['tetrode_info'],
