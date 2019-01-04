@@ -357,10 +357,10 @@ def get_replay_triggered_power(lfps, replay_info, tetrode_info,
         window_offset=window_offset, sampling_frequency=sampling_frequency)
     ripple_locked_lfps = (ripple_locked_lfps.to_xarray().to_array()
                           .rename({'variable': 'tetrodes'})
-                          .transpose('time', 'ripple_number', 'tetrodes')
-                          .dropna('ripple_number'))
+                          .transpose('time', 'replay_id', 'tetrodes')
+                          .dropna('replay_id'))
     ripple_locked_lfps = (ripple_locked_lfps
-                          - ripple_locked_lfps.mean(['ripple_number']))
+                          - ripple_locked_lfps.mean(['replay_id']))
     start_time = ripple_locked_lfps.time.min().values / np.timedelta64(1, 's')
     m = Multitaper(ripple_locked_lfps.values, **multitaper_params,
                    start_time=start_time)
@@ -368,10 +368,12 @@ def get_replay_triggered_power(lfps, replay_info, tetrode_info,
     dimension_names = ['time', 'frequency', 'tetrode']
     data_vars = {
         'power': (dimension_names, c.power())}
+    is_tetrode = tetrode_info.tetrode_id.isin(lfps.columns)
     coordinates = {
         'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
-        'tetrode': tetrode_info.tetrode_id.values,
-        'brain_area': ('tetrode', tetrode_info.area.tolist()),
+        'tetrode': lfps.columns,
+        'brain_area': ('tetrode', tetrode_info.loc[is_tetrode].area.tolist()),
     }
-    return xr.Dataset(data_vars, coords=coordinates)
+    return (xr.Dataset(data_vars, coords=coordinates)
+            .sel(frequency=slice(0, 300)))
