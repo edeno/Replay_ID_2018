@@ -78,9 +78,9 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
               .reindex(time))
 
     logger.info('Finding multiunit high synchrony events...')
-    tetrode_keys = tetrode_info.loc[
-        (tetrode_info.numcells > 0) & is_brain_areas].index
-    multiunit = (get_all_multiunit_indicators(tetrode_keys, animals)
+    tetrode_info = tetrode_info.loc[
+        (tetrode_info.numcells > 0) & is_brain_areas]
+    multiunit = (get_all_multiunit_indicators(tetrode_info.index, animals)
                  .sel(features=_MARKS)
                  .reindex({'time': time}))
     multiunit_spikes = (np.any(~np.isnan(multiunit), axis=1).values).astype(
