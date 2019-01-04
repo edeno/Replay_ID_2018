@@ -19,7 +19,7 @@ def main():
     data_types = set(itertools.chain(*USE_LIKELIHOODS.values()))
     data = load_data(epoch_key, ANIMALS, SAMPLING_FREQUENCY, data_types,
                      BRAIN_AREAS, speed_metric)
-    n_components = np.array([15, 30, 45])
+    n_components = np.linspace(15, 60, 4, dtype=int)
     weight_concentration_prior = np.logspace(-2, 2, 5)
 
     grid_parameters = [
