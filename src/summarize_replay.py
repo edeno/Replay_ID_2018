@@ -368,12 +368,10 @@ def get_replay_triggered_power(lfps, replay_info, tetrode_info,
     dimension_names = ['time', 'frequency', 'tetrode']
     data_vars = {
         'power': (dimension_names, c.power())}
-    is_tetrode = tetrode_info.tetrode_id.isin(lfps.columns)
     coordinates = {
         'time': _center_time(c.time),
         'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
         'tetrode': lfps.columns,
-        'brain_area': ('tetrode', tetrode_info.loc[is_tetrode].area.tolist()),
     }
     return (xr.Dataset(data_vars, coords=coordinates)
             .sel(frequency=slice(0, 300)))
