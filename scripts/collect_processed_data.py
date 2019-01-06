@@ -11,7 +11,7 @@ from src.parameters import PROCESSED_DATA_DIR, USE_LIKELIHOODS
 COLUMNS = ['animal', 'day', 'epoch',
            'replay_type', 'replay_motion_type', 'replay_movement_distance',
            'credible_interval_size', 'data_source', 'duration',
-           'pct_unique_spiking', 'pct_total_spikes']
+           'pct_unique_spiking', 'pct_total_spikes', 'avg_replay_speed']
 
 FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 logging.basicConfig(level='INFO', format=FORMAT)
