@@ -70,7 +70,7 @@ def save_replay_info_figures(replay_info, name=None):
 
     # Compare how far the replay position moves/posterior confidence bounds
     continuous_covariates = [
-        'replay_movement_distance', 'credible_interval_size',
+        'replay_movement_distance', 'avg_replay_speed',
         'duration', 'pct_unique_spiking', 'pct_total_spikes']
     for covariate in continuous_covariates:
         plot_continuous_by_data_source(replay_info, covariate)
