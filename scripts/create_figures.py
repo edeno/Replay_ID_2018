@@ -73,12 +73,12 @@ def save_replay_info_figures(replay_info, name=None):
         'replay_movement_distance', 'avg_replay_speed',
         'duration', 'pct_unique_spiking', 'pct_total_spikes']
     for covariate in continuous_covariates:
-        plot_continuous_by_data_source(replay_info, covariate)
+        plot_continuous_by_data_source(replay_info, covariate, kind='bar')
         figure_name = f'{covariate}_by_data_source'
         figure_name = _add_name(figure_name, name)
         plt.savefig(figure_name)
 
-        plot_continuous_by_data_source(replay_info, covariate,
+        plot_continuous_by_data_source(replay_info, covariate, kind='bar',
                                        col='animal', col_wrap=2)
         figure_name = f'{covariate}_by_data_source_by_animal'
         figure_name = _add_name(figure_name, name)
