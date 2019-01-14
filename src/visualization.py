@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, LogNorm
 
 from .parameters import USE_LIKELIHOODS
 
@@ -422,5 +422,28 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
         f'replay_number = {animal}_{day:02d}_{epoch:02d}_{replay_number:03d}',
         fontsize=14, y=1.01)
     axes[-1].set_xlabel('Time (s)')
+
+    return fig, axes
+
+
+def plot_power_change(power, data_source1, data_source2,
+                      frequency=None, vmin=0.5, vmax=2):
+    fig, axes = plt.subplots(1, 3, figsize=(21, 7), constrained_layout=True)
+    (power[data_source1].mean('tetrode')
+     .sel(frequency=frequency)
+     .plot(x='time', y='frequency', ax=axes[0]))
+    axes[0].set_title(data_source1)
+
+    (power[data_source2].mean('tetrode')
+     .sel(frequency=frequency)
+     .plot(x='time', y='frequency', ax=axes[1]))
+    axes[1].set_title(data_source2)
+
+    ((power[data_source1] / power[data_source2]).mean('tetrode')
+     .sel(frequency=frequency)
+     .plot(x='time', y='frequency', ax=axes[2],
+           norm=LogNorm(vmin=vmin, vmax=vmax), cmap='RdBu_r',
+           vmin=vmin, vmax=vmax, center=0))
+    axes[2].set_title(f'{data_source1} vs. {data_source2}')
 
     return fig, axes

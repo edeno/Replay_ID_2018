@@ -1,19 +1,22 @@
 import logging
 import sys
+from itertools import combinations
 from os.path import join
 
 import matplotlib.pyplot as plt
 import pandas as pd
+import xarray as xr
 
-from src.parameters import FIGURE_DIR, PROCESSED_DATA_DIR
+from src.parameters import FIGURE_DIR, PROCESSED_DATA_DIR, USE_LIKELIHOODS
 from src.visualization import (compare_jaccard_similarity_of_replays,
                                compare_similarity_of_overlapping_replays,
                                compare_time_difference_of_overlapping_replays,
                                plot_continuous_by_data_source,
-                               plot_data_source_counts,
+                               plot_data_source_counts, plot_power_change,
                                plot_proportion_events_by_data_source)
 
 logging.basicConfig(level='INFO')
+decoder_type = 'smoother'
 
 
 def _add_name(figure_name, name=None):
@@ -85,11 +88,39 @@ def save_replay_info_figures(replay_info, name=None):
         plt.savefig(figure_name)
 
 
+def save_power_figures(power, name=None):
+    for data_source1, data_source2 in combinations(USE_LIKELIHOODS, 2):
+
+        plot_power_change(power, data_source1, data_source2,
+                          frequency=slice(0, 30))
+        figure_name = f'{data_source1}_vs_{data_source2}_power_change_low'
+        figure_name = _add_name(figure_name, name)
+        plt.savefig(figure_name)
+
+        plot_power_change(power, data_source1, data_source2,
+                          frequency=slice(30, 125))
+        figure_name = f'{data_source1}_vs_{data_source2}_power_change_gamma'
+        figure_name = _add_name(figure_name, name)
+        plt.savefig(figure_name)
+
+        plot_power_change(power, data_source1, data_source2,
+                          frequency=slice(125, 300))
+        figure_name = f'{data_source1}_vs_{data_source2}_power_change_ripple'
+        figure_name = _add_name(figure_name, name)
+        plt.savefig(figure_name)
+
+
 def main():
     logging.info('Comparing all replay events...')
     replay_info_path = join(PROCESSED_DATA_DIR, 'smoother_replay_info.csv')
     replay_info = pd.read_csv(replay_info_path)
     save_replay_info_figures(replay_info)
+
+    power = {data_source: xr.open_mfdataset(
+        join(PROCESSED_DATA_DIR, '*.nc'),
+        f'{decoder_type}/{data_source}/power').power
+        for data_source in USE_LIKELIHOODS}
+    save_power_figures(power)
 
     logging.info('Comparing overlapping replay events...')
     overlap_info = pd.read_csv(
