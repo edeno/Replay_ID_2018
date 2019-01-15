@@ -118,7 +118,7 @@ def main():
 
     power = {data_source: xr.open_mfdataset(
         join(PROCESSED_DATA_DIR, '*.nc'),
-        f'{decoder_type}/{data_source}/power').power
+        group=f'{decoder_type}/{data_source}/power').power
         for data_source in USE_LIKELIHOODS}
     save_power_figures(power)
 
