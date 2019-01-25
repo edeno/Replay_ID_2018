@@ -1,5 +1,6 @@
 import itertools
 import logging
+import os
 import sys
 from argparse import ArgumentParser
 from collections import OrderedDict
@@ -21,7 +22,8 @@ USE_LIKELIHOODS = OrderedDict(
     [('lfp_power', ['lfp_power']),
      ('spikes', ['spikes']),
      ('multiunit', ['multiunit']),
-     ('ripple', ['ripple'])]
+     ('ad_hoc_ripple', ['ad_hoc_ripple']),
+     ('ad_hoc_multiunit', ['ad_hoc_multiunit'])]
 )
 
 
@@ -33,7 +35,8 @@ def main(epoch_key, speed_metric='linear_speed',
 
     replay_detector = ReplayDetector(
         multiunit_density_model=WhitenedKDE,
-        multiunit_model_kwargs=dict(bandwidth=1.10, kernel='epanechnikov'))
+        multiunit_model_kwargs=dict(bandwidth=0.5, kernel='epanechnikov',
+                                    rtol=1E-4))
     replay_detector.fit(
         is_replay=data['is_ripple'], speed=data['position_info'].linear_speed,
         position=data['position_info'][position_metric],
@@ -74,19 +77,30 @@ def main(epoch_key, speed_metric='linear_speed',
     multiunit_replay_info, multiunit_is_replay = get_replay_times(
         multiunit_detector_results)
 
+    replay_infos = OrderedDict(
+        [('lfp_power', lfp_power_replay_info),
+         ('spikes', spikes_replay_info),
+         ('multiunit', multiunit_replay_info),
+         ('ad_hoc_ripple', data['ripple_times']),
+         ('ad_hoc_multiunit', data['multiunit_high_synchrony_times'])]
+    )
+
     animal, day, epoch = epoch_key
-    folder = 'replays_smoother' if use_smoother else 'replays_filter'
-
-    for replay_number in tqdm(spikes_replay_info.index):
-        fig, _ = plot_replay_with_data(
-            replay_number, data, spikes_replay_info, replay_detector,
-            spikes_detector_results, lfp_power_detector_results,
-            multiunit_detector_results, epoch_key)
-
-        figure_name = f'{animal}_{day:02d}_{epoch:02d}_{replay_number:03d}.png'
-        figure_path = join(FIGURE_DIR, folder, figure_name)
-        plt.savefig(figure_path, bbox_inches='tight')
-        plt.close(fig)
+    smoother_type = 'smoother' if use_smoother else 'filter'
+    for data_source, replay_info in replay_infos.items():
+        logging.info(f'{data_source}...')
+        folder = join(FIGURE_DIR, f'replays_{data_source}_{smoother_type}')
+        os.makedirs(folder, exist_ok=True)
+        for replay_number in tqdm(replay_info.index):
+            fig, _ = plot_replay_with_data(
+                replay_number, data, replay_info, replay_detector,
+                spikes_detector_results, lfp_power_detector_results,
+                multiunit_detector_results, epoch_key)
+            figure_name = (
+                f'{animal}_{day:02d}_{epoch:02d}_{replay_number:03d}.png')
+            figure_path = join(folder, figure_name)
+            plt.savefig(figure_path, bbox_inches='tight')
+            plt.close(fig)
 
 
 def get_command_line_arguments():
