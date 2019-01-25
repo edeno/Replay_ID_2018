@@ -1,7 +1,7 @@
 #!/bin/bash -l
 
 #$ -P braincom
-#$ -l h_rt=8:00:00
+#$ -l h_rt=12:00:00
 #$ -l mem_total=125G
 #$ -j y
 #$ -o replay_examples.log
