@@ -366,6 +366,7 @@ def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
                              time=lambda ds: ds.time / np.timedelta64(1, 's')))
     fig, axes = plt.subplots(8, 1, figsize=(12, 16),
                              constrained_layout=True, sharex=True)
+    plt.ticklabel_format(useOffset=False)
 
     axes[0].plot(time, is_ripple,
                  label='Ad-hoc ripple', linewidth=3)
