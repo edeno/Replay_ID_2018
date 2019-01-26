@@ -8,10 +8,10 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
+from sklearn.mixture import BayesianGaussianMixture
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
-from src.misc import WhitenedKDE
 from src.parameters import ANIMALS, BRAIN_AREAS, FIGURE_DIR, SAMPLING_FREQUENCY
 from src.summarize_replay import get_replay_times
 from src.visualization import plot_replay_with_data
@@ -34,9 +34,10 @@ def main(epoch_key, speed_metric='linear_speed',
                      BRAIN_AREAS, speed_metric)
 
     replay_detector = ReplayDetector(
-        multiunit_density_model=WhitenedKDE,
-        multiunit_model_kwargs=dict(bandwidth=0.5, kernel='epanechnikov',
-                                    rtol=1E-4))
+        multiunit_density_model=BayesianGaussianMixture,
+        multiunit_model_kwargs=dict(n_components=100, tol=1E-8,
+                                    weight_concentration_prior=1E3,
+                                    init_params='random'))
     replay_detector.fit(
         is_replay=data['is_ripple'], speed=data['position_info'].linear_speed,
         position=data['position_info'][position_metric],
