@@ -29,7 +29,15 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
 
     for data_source, likelihoods in use_likelihoods.items():
         logging.info(f'Finding replays with {data_source}...')
-        if data_source != 'ripple':
+        if data_source == 'ad_hoc_ripple':
+            replay_info = data['ripple_times'].copy()
+            is_replay = data['ripple_labels'].copy()
+            detector_results = []
+        elif data_source == 'ad_hoc_multiunit':
+            replay_info = data['multiunit_high_synchrony_times'].copy()
+            is_replay = data['multiunit_high_synchrony_labels'].copy()
+            detector_results = []
+        else:
             detector_results = replay_detector.predict(
                 speed=data['position_info'][speed_metric],
                 position=data['position_info'][position_metric],
@@ -39,10 +47,6 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
                 use_likelihoods=likelihoods,
                 use_smoother=use_smoother)
             replay_info, is_replay = get_replay_times(detector_results)
-        else:
-            replay_info = data['ripple_times'].copy()
-            is_replay = data['ripple_labels'].copy()
-            detector_results *= np.nan
 
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,

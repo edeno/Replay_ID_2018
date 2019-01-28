@@ -31,7 +31,8 @@ USE_LIKELIHOODS = OrderedDict(
     [('lfp_power', ['lfp_power']),
      ('spikes', ['spikes']),
      # ('multiunit', ['multiunit']),
-     ('ripple', ['ripple'])]
+     ('ad_hoc_ripple', ['ad_hoc_ripple']),
+     ('ad_hoc_multiunit', ['ad_hoc_multiunit'])]
 )
 
 BRAIN_AREAS = ['CA1', 'CA2', 'CA3']
