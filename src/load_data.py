@@ -133,6 +133,7 @@ def load_data(epoch_key, animals, sampling_frequency, data_types,
         'ripple_band_lfps': ripple_band_lfps,
         'multiunit_high_synchrony_times': multiunit_high_synchrony_times,
         'is_multiunit_high_synchrony': multiunit_high_synchrony_labels > 0,
+        'multiunit_high_synchrony_labels': multiunit_high_synchrony_labels,
         'multiunit_firing_rate': multiunit_firing_rate,
     }
 
