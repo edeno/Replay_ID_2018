@@ -35,9 +35,7 @@ def main(epoch_key, speed_metric='linear_speed',
 
     replay_detector = ReplayDetector(
         multiunit_density_model=BayesianGaussianMixture,
-        multiunit_model_kwargs=dict(n_components=100, tol=1E-8,
-                                    weight_concentration_prior=1E3,
-                                    init_params='random'))
+        multiunit_model_kwargs=dict(n_components=100, tol=1E-8))
     replay_detector.fit(
         is_replay=data['is_ripple'], speed=data['position_info'].linear_speed,
         position=data['position_info'][position_metric],
