@@ -7,5 +7,5 @@
 #$ -o replay_examples.log
 #$ -pe omp 16
 export OPENBLAS_NUM_THREADS=16
-python generate_replay_examples.py bon 3 2
 python generate_replay_examples.py bon 3 2 --use_smoother
+python generate_replay_examples.py bon 3 2
