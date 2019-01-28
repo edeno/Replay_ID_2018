@@ -9,7 +9,7 @@ from scipy.stats import linregress
 
 from loren_frank_data_processing import reshape_to_segments
 from replay_classification import SortedSpikeDecoder
-from spectral_connectivity import Multitaper, Connectivity
+from spectral_connectivity import Connectivity, Multitaper
 
 logger = getLogger(__name__)
 
@@ -51,7 +51,7 @@ def get_replay_times(results, probability_threshold=0.8,
     return replay_times, labels
 
 
-def summarize_replays(replay_info, detector_results, decoder_results, data,
+def summarize_replays(replay_info, decoder_results, data,
                       sampling_frequency=1500,
                       position_metric='linear_distance'):
     MOTION_BOUNDS = [-np.inf, -50, 50, np.inf]
@@ -61,9 +61,6 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
                             .set_index(replay_info.index))
     replay_info = pd.concat((replay_info, replay_position_info), axis=1)
 
-    detector_posterior = []
-    decoder_posterior = []
-    detector_likelihood = []
     replay_type = []
     replay_type_confidence = []
     motion_slope = []
@@ -75,20 +72,8 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     avg_replay_speed = []
 
     for r, decoder_result in zip(replay_info.itertuples(), decoder_results):
-        # Get detector posterior
-        cur_detector_results = (
-            detector_results.sel(time=slice(r.start_time, r.end_time))
-            .assign_coords(time=lambda da: da.time - r.start_time))
-        detector_posterior.append(
-            cur_detector_results.sel(state='Replay').posterior.drop('state'))
-        detector_likelihood.append(
-            np.exp(np.log(cur_detector_results.likelihood)
-                   .diff(dim='state')).squeeze())
 
         density = decoder_result.results.posterior_density.sum('state')
-
-        # Get decoder posterior
-        decoder_posterior.append(decoder_result.results.posterior_density)
 
         # Classify Replay
         replay_type.append(decoder_result.predicted_state())
@@ -128,18 +113,7 @@ def summarize_replays(replay_info, detector_results, decoder_results, data,
     replay_info['pct_total_spikes'] = pct_total_spikes
     replay_info['avg_replay_speed'] = avg_replay_speed
 
-    detector_posterior = (xr.concat(detector_posterior, dim=replay_info.index)
-                          .rename('detector_posterior'))
-    detector_likelihood = (xr.concat(
-        detector_likelihood, dim=replay_info.index)
-        .rename('detector_likelihood'))
-    decoder_posterior = (xr.concat(decoder_posterior, dim=replay_info.index)
-                         .rename('decoder_posterior'))
-    replay_densities = xr.merge(
-        (detector_posterior, detector_likelihood, decoder_posterior),
-        join='inner')
-
-    return replay_info, replay_densities
+    return replay_info
 
 
 def decode_replays(data, replay_detector, is_replay, replay_info,

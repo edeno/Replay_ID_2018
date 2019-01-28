@@ -7,7 +7,6 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
-import numpy as np
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
@@ -53,8 +52,8 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
             data, replay_detector, is_replay, replay_info, sampling_frequency,
             position_metric, use_smoother)
         logging.info(f'Summarizing replays with {data_source}...')
-        replay_info, replay_densities = summarize_replays(
-            replay_info, detector_results, decoder_results, data,
+        replay_info = summarize_replays(
+            replay_info, decoder_results, data,
             SAMPLING_FREQUENCY, position_metric)
 
         power = get_replay_triggered_power(
@@ -64,7 +63,7 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
         save_power(power, epoch_key, use_smoother, data_source)
 
         # Save Data
-        save_replay_data(data_source, epoch_key, replay_info, replay_densities,
+        save_replay_data(data_source, epoch_key, replay_info,
                          is_replay, use_smoother)
         data_sources.append(data_source)
         labels.append(is_replay.replay_number)
