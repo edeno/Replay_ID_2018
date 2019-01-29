@@ -6,8 +6,8 @@ from collections import OrderedDict
 from os.path import join
 
 import matplotlib.pyplot as plt
-from tqdm.auto import tqdm
 from sklearn.mixture import BayesianGaussianMixture
+from tqdm.auto import tqdm
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
@@ -75,11 +75,11 @@ def main(epoch_key, speed_metric='linear_speed',
         multiunit_detector_results)
 
     replay_infos = OrderedDict(
-        [('lfp_power', lfp_power_replay_info),
+        [('ad_hoc_ripple', data['ripple_times']),
+         ('ad_hoc_multiunit', data['multiunit_high_synchrony_times']),
+         ('lfp_power', lfp_power_replay_info),
          ('spikes', spikes_replay_info),
-         ('multiunit', multiunit_replay_info),
-         ('ad_hoc_ripple', data['ripple_times']),
-         ('ad_hoc_multiunit', data['multiunit_high_synchrony_times'])]
+         ('multiunit', multiunit_replay_info)],
     )
 
     animal, day, epoch = epoch_key
