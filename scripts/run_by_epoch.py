@@ -101,7 +101,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
 
     replay_detector = ReplayDetector(
         multiunit_density_model=BayesianGaussianMixture,
-        multiunit_model_kwargs=dict(n_components=300, tol=1E-8))
+        multiunit_model_kwargs=dict(n_components=100, tol=1E-8))
     replay_detector.fit(
         is_replay=data['is_ripple'], speed=data['position_info'][speed_metric],
         position=data['position_info'][position_metric],
