@@ -1,3 +1,7 @@
+import os
+import re
+from shutil import copyfile
+
 import numpy as np
 import statsmodels.api as sm
 from sklearn.base import BaseEstimator, DensityMixin
@@ -36,3 +40,25 @@ class StatsmodelsKDE(BaseEstimator, DensityMixin):
 
     def score_samples(self, X):
         return np.log(self.estimator_.pdf(X))
+
+
+def copy_marks(src_directory, animal):
+    target_directory = animal.directory
+    mark_files = [os.path.join(root, f)
+                  for root, _, files in os.walk(src_directory)
+                  for f in files if (f.endswith('_params.mat') or
+                                     f.endswith('_params_pc.mat'))
+                  and not f.startswith('matclust')]
+    new_mark_filenames = [rename_mark_file(mark_file, animal)
+                          for mark_file in mark_files]
+
+    for mark_file, new_filename in zip(mark_files, new_mark_filenames):
+        mark_path = os.path.join(target_directory, 'EEG', new_filename)
+        print(f'Copying {mark_file}\nto \n{new_filename}\n')
+        copyfile(mark_file, mark_path)
+
+
+def rename_mark_file(filename, animal):
+    filename = os.path.splitext(os.path.basename(filename))[0]
+    day, tetrode = [int(d) for d in re.findall(r'\d+', filename)]
+    return f'{animal.short_name}marks{day:02d}-{tetrode:02d}.mat'
