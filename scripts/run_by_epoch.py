@@ -92,7 +92,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
                  speed_metric='linear_speed'):
     animal, day, epoch = epoch_key
     data_types = set(itertools.chain(*use_likelihoods.values()))
-    data = load_data(epoch_key, animals, sampling_frequency, data_types,
+    data = load_data(epoch_key, animals, sampling_frequency,
                      BRAIN_AREAS, speed_metric)
     plot_behavior(data['position_info'], position_metric)
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'

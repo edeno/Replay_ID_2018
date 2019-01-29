@@ -1,4 +1,3 @@
-import itertools
 import logging
 import os
 import sys
@@ -29,8 +28,7 @@ USE_LIKELIHOODS = OrderedDict(
 
 def main(epoch_key, speed_metric='linear_speed',
          position_metric='linear_distance', use_smoother=False):
-    data_types = set(itertools.chain(*USE_LIKELIHOODS.values()))
-    data = load_data(epoch_key, ANIMALS, SAMPLING_FREQUENCY, data_types,
+    data = load_data(epoch_key, ANIMALS, SAMPLING_FREQUENCY,
                      BRAIN_AREAS, speed_metric)
 
     replay_detector = ReplayDetector(
