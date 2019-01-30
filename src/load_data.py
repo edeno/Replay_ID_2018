@@ -90,6 +90,8 @@ def load_data(epoch_key, animals, sampling_frequency,
         multiunit_high_synchrony_times.index.rename('replay_number'))
     multiunit_high_synchrony_labels = get_ripple_labels(
         multiunit_high_synchrony_times, time)
+    multiunit_high_synchrony_times = multiunit_high_synchrony_times.assign(
+        duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
     multiunit_firing_rate = pd.DataFrame(
         get_multiunit_population_firing_rate(
             multiunit_spikes, sampling_frequency), index=time,
@@ -102,14 +104,13 @@ def load_data(epoch_key, animals, sampling_frequency,
         minimum_duration=np.timedelta64(15, 'ms'))
     ripple_times.index = ripple_times.index.rename('replay_number')
     ripple_labels = get_ripple_labels(ripple_times, time)
+    ripple_times = ripple_times.assign(
+        duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
 
     ripple_band_lfps = pd.DataFrame(
         np.stack([filter_ripple_band(lfps.values[:, ind])
                   for ind in np.arange(lfps.shape[1])], axis=1),
         index=lfps.index)
-
-    ripple_times = ripple_times.assign(
-        duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
 
     return {
         'position_info': position_info,
