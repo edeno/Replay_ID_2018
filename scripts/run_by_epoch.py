@@ -11,9 +11,9 @@ from sklearn.mixture import BayesianGaussianMixture
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
-from src.parameters import (ANIMALS, BRAIN_AREAS, FIGURE_DIR,
-                            MULTITAPER_PARAMETERS, SAMPLING_FREQUENCY,
-                            USE_LIKELIHOODS)
+from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
+                            SAMPLING_FREQUENCY, USE_LIKELIHOODS,
+                            detector_parameters)
 from src.save_data import save_overlap, save_power, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_replay_times,
@@ -98,9 +98,7 @@ def run_analysis(epoch_key, use_likelihoods,
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
     plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
 
-    replay_detector = ReplayDetector(
-        multiunit_density_model=BayesianGaussianMixture,
-        multiunit_model_kwargs=dict(n_components=100, tol=1E-8))
+    replay_detector = ReplayDetector(**detector_parameters)
     replay_detector.fit(
         is_replay=data['is_ripple'], speed=data['position_info'][speed_metric],
         position=data['position_info'][position_metric],

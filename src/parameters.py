@@ -2,6 +2,9 @@ from collections import OrderedDict
 from os.path import abspath, dirname, join, pardir
 
 from loren_frank_data_processing import Animal
+from src.misc import NumbaKDE
+
+import numpy as np
 
 # LFP sampling frequency
 SAMPLING_FREQUENCY = 1000
@@ -68,4 +71,16 @@ MULTITAPER_PARAMETERS = {
     '4Hz': _4Hz_Res,
     '10Hz': _10Hz_Res,
     '12Hz': _12Hz_Res,
+}
+
+detector_parameters = {
+    'multiunit_density_model': NumbaKDE,
+    'multiunit_model_kwargs': {'bandwidth': np.array(
+        [24.0, 24.0, 24.0, 24.0, 6.0, 6.0])},
+    'movement_std': 2.0,
+    'place_bin_size': 1.0,
+    'lfp_model_kwargs': {'n_components': 1, 'max_iter': 200, 'tol': 1e-06},
+    'replay_speed': 1,
+    'spike_model_knot_spacing': 10,
+    'spike_model_penalty': 0.5,
 }
