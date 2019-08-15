@@ -12,6 +12,18 @@ HUE_ORDER = {
                     'Outbound-Forward', 'Outbound-Reverse', 'Unclassified']
 }
 
+_DEFAULT_DATA_TYPES = ['spikes', 'multiunit', 'lfps', 'bandpassed_lfps',
+                       'speed']
+_DEFAULT_RESULT_TYPES = ['spikes', 'ripple_power', 'clusterless',
+                         'ad_hoc_ripple', 'ad_hoc_multiunit']
+RESULT_COLORS_MAP = {
+    'spikes': '#ff7f0e',
+    'ripple_power': '#2ca02c',
+    'clusterless': '#d62728',
+    'ad_hoc_ripple': '#1f77b4',
+    'ad_hoc_multiunit': '#17becf',
+}
+
 
 def plot_data_source_counts(replay_info, kind='violin', **kwargs):
     '''Compare number of replays by data source.'''
@@ -247,7 +259,7 @@ def plot_replay_spiking_ordered_by_place_fields(
     im = ax.scatter(time[time_ind], neuron_to_ordered_place_field[neuron_ind],
                     c=place_bin_centers[neuron_to_place_bin[neuron_ind]],
                     cmap=cmap, vmin=np.floor(place_bin_centers.min()),
-                    vmax=np.ceil(place_bin_centers.max()))
+                    vmax=np.ceil(place_bin_centers.max()), s=25)
     plt.colorbar(im, ax=ax, label='position')
 
     ax.set_xlim(time[[0, -1]])
@@ -255,7 +267,7 @@ def plot_replay_spiking_ordered_by_place_fields(
     ax.set_ylabel('Neurons')
     ax.set_yticks(np.arange(n_neurons))
     ax.set_yticklabels(ordered_place_field_to_neuron + 1)
-    ax.set_ylim((-0.25, n_neurons - 1 + 0.25))
+    ax.set_ylim((-0.25, n_neurons + 1.00))
     sns.despine()
 
     return ax, im
@@ -312,117 +324,204 @@ def plot_detector_posteriors(replay_densities, col_wrap=5):
             ax.axis('off')
 
 
-def plot_replay_with_data(replay_number, data, replay_info, replay_detector,
-                          spikes_detector_results,
-                          lfp_power_detector_results,
-                          multiunit_detector_results,
-                          epoch_key,
+def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
+                          replay_detector=None,
+                          spikes_detector_results=None,
+                          lfp_power_detector_results=None,
+                          multiunit_detector_results=None,
                           sampling_frequency=1500,
                           offset=pd.Timedelta(0.250, 's'),
                           position_metric='linear_distance',
                           speed_metric='linear_speed',
-                          is_relative_time=False):
+                          is_relative_time=False,
+                          show_data_types=None, show_result_types=None):
+
+    if show_data_types is None:
+        show_data_types = _DEFAULT_DATA_TYPES
+    if show_result_types is None:
+        show_result_types = _DEFAULT_RESULT_TYPES
 
     start_time = replay_info.loc[replay_number].start_time - offset
     end_time = replay_info.loc[replay_number].end_time + offset
-
-    is_ripple = data['is_ripple'].loc[start_time:end_time].squeeze()
-    is_multiunit_high_synchrony = (data['is_multiunit_high_synchrony']
-                                   .loc[start_time:end_time].squeeze())
     position_info = data['position_info'].loc[start_time:end_time]
-    spikes = data['spikes'].loc[start_time:end_time]
-    multiunit_firing_rate = (
-        data['multiunit_firing_rate'].loc[start_time:end_time].squeeze())
-    place_fields = (replay_detector
-                    ._spiking_likelihood
-                    .keywords['place_conditional_intensity'].T
-                    * sampling_frequency)
-    lfps = data['lfps'].loc[start_time:end_time]
-    lfps /= np.ptp(lfps, axis=0)
-    ripple_band_lfps = data['ripple_band_lfps'].loc[start_time:end_time]
-    ripple_band_lfps /= np.ptp(data['ripple_band_lfps'], axis=0)
-    mean_power = data['power'].mean(axis=0).values
-    power = data['power'].loc[start_time:end_time].dropna() / mean_power
-    place_bin_centers = replay_detector.place_bin_centers
-
     time = position_info.index.total_seconds()
-    power_time = power.index.total_seconds()
-
     if is_relative_time:
         time -= start_time.total_seconds()
-        power_time -= start_time.total_seconds()
 
-    spike_results = (spikes_detector_results
-                     .sel(time=slice(start_time, end_time), state='Replay')
-                     .assign_coords(
-                         time=lambda ds: ds.time / np.timedelta64(1, 's')))
-    lfp_results = (lfp_power_detector_results
-                   .sel(time=slice(start_time, end_time), state='Replay')
-                   .assign_coords(
-                       time=lambda ds: ds.time / np.timedelta64(1, 's')))
-    multiunit_results = (multiunit_detector_results
+    if 'spikes' in show_result_types:
+        spike_results = (spikes_detector_results
                          .sel(time=slice(start_time, end_time), state='Replay')
                          .assign_coords(
                              time=lambda ds: ds.time / np.timedelta64(1, 's')))
-    fig, axes = plt.subplots(8, 1, figsize=(12, 16),
+    else:
+        spike_results = None
+
+    if 'ripple_power' in show_result_types:
+        lfp_results = (lfp_power_detector_results
+                       .sel(time=slice(start_time, end_time), state='Replay')
+                       .assign_coords(
+                           time=lambda ds: ds.time / np.timedelta64(1, 's')))
+    else:
+        lfp_results = None
+
+    if 'clusterless' in show_result_types:
+        multiunit_results = (
+            multiunit_detector_results
+            .sel(time=slice(start_time, end_time), state='Replay')
+            .assign_coords(time=lambda ds: ds.time / np.timedelta64(1, 's')))
+    else:
+        multiunit_results = None
+
+    n_plots = len(show_data_types)
+    if len(show_result_types) > 0:
+        n_plots += 1
+        if 'spikes' in show_result_types:
+            n_plots += 1
+        if 'clusterless' in show_result_types:
+            n_plots += 1
+
+    fig, axes = plt.subplots(n_plots, 1, figsize=(12, 2.25 * n_plots),
                              constrained_layout=True, sharex=True)
     plt.ticklabel_format(useOffset=False)
 
-    axes[0].plot(time, is_ripple,
-                 label='Ad-hoc ripple', linewidth=3)
-    axes[0].plot(time, is_multiunit_high_synchrony,
-                 label='Ad-hoc multiunit HSE', linewidth=3)
-    lfp_results.replay_probability.plot(x='time', label='lfp_power',
-                                        ax=axes[0], linewidth=3)
-    spike_results.replay_probability.plot(x='time', label='spikes',
-                                          ax=axes[0], linewidth=3)
-    multiunit_results.replay_probability.plot(x='time', label='multiunit',
-                                              ax=axes[0], linewidth=3)
+    if 'ad_hoc_ripple' in show_result_types:
+        is_ripple = data['is_ripple'].loc[start_time:end_time].squeeze()
+        axes[0].plot(time, is_ripple, label='Ad-hoc ripple', linewidth=3,
+                     color=RESULT_COLORS_MAP['ad_hoc_ripple'])
+    if 'ad_hoc_multiunit' in show_result_types:
+        is_multiunit_high_synchrony = (data['is_multiunit_high_synchrony']
+                                       .loc[start_time:end_time].squeeze())
+        axes[0].plot(time, is_multiunit_high_synchrony,
+                     label='Ad-hoc multiunit HSE', linewidth=3,
+                     color=RESULT_COLORS_MAP['ad_hoc_multiunit'])
+    if 'ripple_power' in show_result_types:
+        lfp_results.replay_probability.plot(
+            x='time', label='ripple power', ax=axes[0], linewidth=3,
+            color=RESULT_COLORS_MAP['ripple_power'])
+    if 'spikes' in show_result_types:
+        spike_results.replay_probability.plot(
+            x='time', label='spikes', ax=axes[0], linewidth=3,
+            color=RESULT_COLORS_MAP['spikes'])
+    if 'clusterless' in show_result_types:
+        multiunit_results.replay_probability.plot(
+            x='time', label='clusterless', ax=axes[0], linewidth=3,
+            color=RESULT_COLORS_MAP['clusterless'])
 
-    axes[0].axhline(0.8, linestyle='--', color='black')
-    axes[0].set_title('')
-    axes[0].legend()
+    if len(show_result_types) > 0:
+        axes[0].set_title('')
+        axes[0].set_ylabel('Replay\nProbability')
+        axes[0].tick_params(length=0)
+        axes[0].set_xlabel('')
+        axes[0].legend(loc='upper right', frameon=False, fontsize=12)
 
-    spike_results.posterior.plot(x='time', y='position',
-                                 vmin=0.0, robust=True, ax=axes[1])
-    axes[1].plot(position_info.index.total_seconds(),
-                 position_info[position_metric].values,
-                 linewidth=3, linestyle='--', color='white')
-    axes[1].set_title('')
+    if 'spikes' in show_result_types:
+        spike_results.posterior.plot(x='time', y='position',
+                                     vmin=0.0, vmax=0.1, ax=axes[1])
+        axes[1].plot(position_info.index.total_seconds(),
+                     position_info[position_metric].values,
+                     linewidth=3, linestyle='--', color='white')
+        axes[1].set_title('')
+        max_df = (data['position_info']
+                  .groupby('arm_name')[position_metric].max())
+        min_time = np.asarray(spike_results.time.min())
+        for arm_name, max_position in max_df.iteritems():
+            axes[1].axhline(max_position, color='grey',
+                            linestyle='-', linewidth=1)
+            axes[1].text(min_time, max_position - 5, arm_name, color='white',
+                         fontsize=11, verticalalignment='top')
+        min_df = (data['position_info']
+                  .groupby('arm_name')[position_metric].min())
+        for arm_name, min_position in min_df.iteritems():
+            axes[1].axhline(min_position, color='grey',
+                            linestyle='-', linewidth=1)
+        axes[1].tick_params(length=0)
+        axes[1].set_xlabel('')
 
-    multiunit_results.posterior.plot(x='time', y='position',
-                                     vmin=0.0, robust=True, ax=axes[2])
-    axes[2].plot(position_info.index.total_seconds(),
-                 position_info[position_metric].values,
-                 linewidth=3, linestyle='--', color='white')
-    axes[2].set_title('')
+    if 'clusterless' in show_result_types:
+        multiunit_results.posterior.plot(x='time', y='position',
+                                         vmin=0.0, robust=True, ax=axes[2])
+        axes[2].plot(position_info.index.total_seconds(),
+                     position_info[position_metric].values,
+                     linewidth=3, linestyle='--', color='white')
+        axes[2].set_title('')
 
-    plot_replay_spiking_ordered_by_place_fields(
-        spikes.values, place_fields, place_bin_centers, ax=axes[3],
-        time=time)
+    ax_ind = 0
+    if len(show_result_types) > 0:
+        ax_ind += 1
+    if 'spikes' in show_result_types:
+        ax_ind += 1
+    if 'clusterless' in show_result_types:
+        ax_ind += 1
 
-    axes[4].plot(time, multiunit_firing_rate.values)
-    axes[4].set_ylabel('Multiunit firing rate (spikes / s)')
+    if 'spikes' in show_data_types:
+        place_bin_centers = replay_detector.place_bin_centers_.squeeze(axis=-1)
+        place_bin_edges = replay_detector.place_bin_edges_.squeeze(axis=-1)
+        is_track = (np.histogram(data['position_info'][position_metric],
+                                 bins=place_bin_edges)[0] > 0)
+        place_fields = (replay_detector
+                        ._spiking_likelihood
+                        .keywords['place_conditional_intensity'].T
+                        * sampling_frequency)
+        place_fields[:, ~is_track] = 0.0
 
-    for lfp_ind, lfp in enumerate(lfps.values.T):
-        axes[5].plot(time, lfp + lfp_ind + 1)
-    axes[5].set_ylabel('LFP')
+        spikes = data['spikes'].loc[start_time:end_time]
+        ax = axes if n_plots == 1 else axes[ax_ind]
+        plot_replay_spiking_ordered_by_place_fields(
+            spikes.values, place_fields, place_bin_centers, ax=ax,
+            time=time)
+        ax.set_yticks([])
+        ax.set_yticklabels([], [])
+        ax.tick_params(length=0)
+        ax.set_xlabel('')
+        ax_ind += 1
 
-    for lfp_ind, lfp in enumerate(ripple_band_lfps.values.T):
-        axes[6].plot(time, lfp + lfp_ind + 1)
-    axes[6].set_ylabel('Ripple\nBandpassed LFP')
+    if 'multiunit' in show_data_types:
+        multiunit_firing_rate = (
+            data['multiunit_firing_rate'].loc[start_time:end_time].squeeze())
+        ax = axes if n_plots == 1 else axes[ax_ind]
+        ax.plot(time, multiunit_firing_rate.values)
+        ax.set_ylabel('Multiunit firing rate (spikes / s)')
+        ax_ind += 1
 
-    axes[7].plot(time,
-                 position_info[speed_metric].values,
-                 linewidth=3)
-    axes[7].axhline(4, color='black', linestyle='--')
-    axes[7].set_ylabel('Speed (m/s)')
+    if 'lfps' in show_data_types:
+        lfps = data['lfps'].loc[start_time:end_time]
+        lfps /= np.ptp(np.asarray(lfps), axis=0)
+        ax = axes if n_plots == 1 else axes[ax_ind]
+        for lfp_ind, lfp in enumerate(lfps.values.T):
+            ax.plot(time, lfp + lfp_ind + 1)
+        ax.set_ylabel('LFPs')
+        ax.set_yticks([])
+        ax.set_yticklabels([], [])
+        ax_ind += 1
 
-    animal, day, epoch = epoch_key
-    plt.suptitle(
-        f'replay_number = {animal}_{day:02d}_{epoch:02d}_{replay_number:03d}',
-        fontsize=14, y=1.01)
-    axes[-1].set_xlabel('Time (s)')
+    if 'bandpassed_lfps' in show_data_types:
+        ripple_band_lfps = np.asarray(
+            data['ripple_band_lfps'].loc[start_time:end_time])
+        ripple_band_lfps /= np.ptp(
+            np.asarray(data['ripple_band_lfps']), axis=0)
+        ax = axes if n_plots == 1 else axes[ax_ind]
+        for lfp_ind, lfp in enumerate(ripple_band_lfps.T):
+            ax.plot(time, lfp + lfp_ind + 1)
+        ax.set_ylabel('Ripple\nBandpassed LFP')
+        ax_ind += 1
+
+    if 'speed' in show_data_types:
+        ax = axes if n_plots == 1 else axes[ax_ind]
+        ax.plot(time, position_info[speed_metric].values, linewidth=3)
+        ax.axhline(4, color='black', linestyle='--')
+        ax.set_ylabel('Speed (m/s)')
+
+    if epoch_key is not None:
+        animal, day, epoch = epoch_key
+        plt.suptitle(
+            ('replay_number = '
+             f'{animal}_{day:02d}_{epoch:02d}_{replay_number:03d}'),
+            fontsize=14, y=1.05)
+
+    ax = axes if n_plots == 1 else axes[-1]
+    plt.xlim((time.min(), time.max()))
+    ax.set_xlabel('Time (s)')
+    sns.despine()
 
     return fig, axes
 
@@ -448,3 +547,39 @@ def plot_power_change(power, data_source1, data_source2,
     axes[2].set_title(f'{data_source1} vs. {data_source2}')
 
     return fig, axes
+
+
+def plot_linearized_place_fields(replay_detector, position_info,
+                                 position_metric='linear_position2',
+                                 sort_order=None):
+    place_bin_centers = replay_detector.place_bin_centers_.squeeze(axis=-1)
+    place_fields = (replay_detector
+                    ._spiking_likelihood
+                    .keywords['place_conditional_intensity'].T)
+    if sort_order is None:
+        sort_order = np.argsort(place_fields.argmax(axis=1))
+    place_fields = place_fields[sort_order]
+    n_neurons = place_fields.shape[0]
+    fig, axes = plt.subplots(n_neurons, 1, constrained_layout=True,
+                             figsize=(10, n_neurons / 3), sharex=True)
+
+    for ax, place_field in zip(axes, place_fields):
+        ax.fill_between(place_bin_centers, place_field)
+        ax.set_yticklabels([])
+        ax.set_yticks([])
+        ax.tick_params(length=0)
+        max_df = (position_info
+                  .groupby('arm_name')[position_metric].max())
+        for arm_name, max_position in max_df.iteritems():
+            ax.axvline(max_position, color='grey',
+                       linestyle='-', linewidth=1)
+        min_df = (position_info
+                  .groupby('arm_name')[position_metric].min())
+        for arm_name, min_position in min_df.iteritems():
+            ax.axvline(min_position, color='grey',
+                       linestyle='-', linewidth=1)
+
+    sns.despine()
+    plt.xlim((place_bin_centers.min(), place_bin_centers.max()))
+
+    return axes
