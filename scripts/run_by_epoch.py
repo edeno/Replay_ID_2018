@@ -88,13 +88,12 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
             overlap_info, epoch_key, data_source1, data_source2, use_smoother)
 
 
-def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
-                 position_metric='linear_distance',
-                 speed_metric='linear_speed'):
+def run_analysis(epoch_key, use_likelihoods,
+                 position_metric='linear_position2',
+                 speed_metric='speed'):
     animal, day, epoch = epoch_key
     data_types = set(itertools.chain(*use_likelihoods.values()))
-    data = load_data(epoch_key, animals, sampling_frequency,
-                     BRAIN_AREAS, speed_metric)
+    data = load_data(epoch_key)
     plot_behavior(data['position_info'], position_metric)
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
     plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
@@ -139,7 +138,7 @@ def run_analysis(epoch_key, animals, sampling_frequency, use_likelihoods,
         plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
     decode(data, replay_detector, use_likelihoods, epoch_key,
-           sampling_frequency, True, position_metric, speed_metric)
+           SAMPLING_FREQUENCY, True, position_metric, speed_metric)
 
     logging.info('Done...')
 
@@ -183,7 +182,7 @@ def main():
     logging.info('Git Hash: {git_hash}'.format(git_hash=git_hash.rstrip()))
 
     # Analysis Code
-    run_analysis(epoch_key, ANIMALS, SAMPLING_FREQUENCY, USE_LIKELIHOODS)
+    run_analysis(epoch_key, USE_LIKELIHOODS)
 
 
 if __name__ == '__main__':
