@@ -22,8 +22,9 @@ from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
 from src.visualization import plot_behavior
 
 
-def decode(data, replay_detector, use_likelihoods, epoch_key,
-           sampling_frequency, use_smoother, position_metric, speed_metric):
+def decode(data, replay_detector, track_labels, use_likelihoods,
+           epoch_key, sampling_frequency, use_smoother, position_metric,
+           speed_metric):
     data_sources = []
     labels = []
     infos = []
@@ -42,7 +43,7 @@ def decode(data, replay_detector, use_likelihoods, epoch_key,
             detector_results = replay_detector.predict(
                 speed=data['position_info'][speed_metric],
                 position=data['position_info'][position_metric],
-                lfp_power=data['power'],
+                lfp_power=data['ripple_power'],
                 spikes=data['spikes'], multiunit=data['multiunit'],
                 time=data['position_info'].index,
                 use_likelihoods=likelihoods,
@@ -99,11 +100,13 @@ def run_analysis(epoch_key, use_likelihoods,
     plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
 
     replay_detector = ReplayDetector(**detector_parameters)
+
+    track_labels = data['position_info'].arm_name
     replay_detector.fit(
-        is_replay=data['is_ripple'], speed=data['position_info'][speed_metric],
+        is_ripple=data['is_ripple'], speed=data['position_info'][speed_metric],
         position=data['position_info'][position_metric],
-        lfp_power=data['power'], spikes=data['spikes'],
-        multiunit=data['multiunit'])
+        lfp_power=data['ripple_power'], spikes=data['spikes'],
+        multiunit=data['multiunit'], track_labels=track_labels)
 
     # Plot detector fits
     if 'spikes' in data_types:
@@ -116,7 +119,7 @@ def run_analysis(epoch_key, use_likelihoods,
         plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
     if 'lfp_power' in data_types:
-        replay_detector.plot_lfp_power(data['power'], data['is_ripple'])
+        replay_detector.plot_lfp_power(data['ripple_power'], data['is_ripple'])
         figure_name = f'lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
         plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
@@ -124,8 +127,9 @@ def run_analysis(epoch_key, use_likelihoods,
         figure_name = f'fitted_lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
         plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
-    decode(data, replay_detector, use_likelihoods, epoch_key,
-           SAMPLING_FREQUENCY, True, position_metric, speed_metric)
+    decode(data, replay_detector, track_labels, use_likelihoods,
+           epoch_key, SAMPLING_FREQUENCY, use_smoother, position_metric,
+           speed_metric)
 
     logging.info('Done...')
 
