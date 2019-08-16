@@ -71,10 +71,10 @@ MULTITAPER_PARAMETERS = {
 }
 
 detector_parameters = {
-    'movement_std': 2.0,
+    'movement_var': 4.0,
+    'replay_speed': 1,
     'place_bin_size': 1.0,
     'lfp_model_kwargs': {'n_components': 1, 'max_iter': 200, 'tol': 1e-06},
-    'replay_speed': 1,
     'spike_model_knot_spacing': 10,
     'spike_model_penalty': 0.5,
     'movement_state_transition_type': 'w_track_1D_random_walk'
