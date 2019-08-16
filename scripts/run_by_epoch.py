@@ -7,7 +7,7 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
-from sklearn.mixture import BayesianGaussianMixture
+import xarray as xr
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
