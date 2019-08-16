@@ -99,7 +99,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
 
 def run_analysis(epoch_key, use_likelihoods,
                  position_metric='linear_position2',
-                 speed_metric='speed'):
+                 speed_metric='speed', use_smoother=True):
     animal, day, epoch = epoch_key
     data_types = set(itertools.chain(*use_likelihoods.values()))
     data = load_data(epoch_key)
