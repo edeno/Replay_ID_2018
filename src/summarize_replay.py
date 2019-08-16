@@ -1,9 +1,11 @@
 
 from logging import getLogger
 
+import networkx as nx
 import numpy as np
 import pandas as pd
 import xarray as xr
+from replay_trajectory_classification import SortedSpikesDecoder
 from scipy.ndimage.measurements import label
 from scipy.stats import linregress
 
@@ -117,27 +119,20 @@ def summarize_replays(replay_info, decoder_results, data,
     return replay_info
 
 
-def decode_replays(data, replay_detector, is_replay, replay_info,
-                   sampling_frequency, position_metric='linear_position2',
-                   use_smoother=True):
-    initial_conditions = {
-        'linear_distance': 'Uniform',
-        'linear_position': 'Uniform',
-        'linear_position2': 'Uniform',
-    }
-
-    decoder = SortedSpikeDecoder(
+def decode_replays(data, replay_detector, is_training, track_labels,
+                   replay_info, sampling_frequency,
+                   position_metric='linear_position2', use_smoother=True):
+    decoder = SortedSpikesDecoder(
         place_bin_size=replay_detector.place_bin_size,
-        replay_speedup_factor=replay_detector.replay_speed,
+        replay_speed=replay_detector.replay_speed,
+        movement_var=replay_detector.movement_std ** 2,
         knot_spacing=replay_detector.spike_model_knot_spacing,
         spike_model_penalty=replay_detector.spike_model_penalty,
-        replay_orders=['Forward', 'Reverse'],
-    ).fit(
-        position=data['position_info'][position_metric].values,
-        experimental_condition=data['position_info'].task.values,
-        spikes=data['spikes'].values,
-        is_training=(is_replay.replay_number == 0).values,
-        initial_conditions=initial_conditions[position_metric])
+        transition_type='w_track_1D_random_walk')
+    decoder.fit(
+        position=data['position_info'][position_metric],
+        spikes=data['spikes'], is_training=is_training,
+        track_labels=track_labels)
 
     test_spikes = reshape_to_segments(
         data['spikes'], replay_info.loc[:, ['start_time', 'end_time']],
