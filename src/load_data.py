@@ -3,6 +3,7 @@ from os.path import join
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 from sklearn.externals import joblib
 
 from loren_frank_data_processing import (get_all_multiunit_indicators,
@@ -11,12 +12,13 @@ from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          get_LFPs, get_trial_time,
                                          make_neuron_dataframe,
                                          make_tetrode_dataframe)
+from loren_frank_data_processing.position import make_track_graph
 from ripple_detection import (Kay_ripple_detector, filter_ripple_band,
                               get_multiunit_population_firing_rate,
                               multiunit_HSE_detector)
 from spectral_connectivity import Connectivity, Multitaper
-from src.parameters import (ANIMALS, BRAIN_AREAS, PROCESSED_DATA_DIR,
-                            SAMPLING_FREQUENCY)
+from src.parameters import (ANIMALS, BRAIN_AREAS, MULTITAPER_PARAMETERS,
+                            PROCESSED_DATA_DIR, SAMPLING_FREQUENCY)
 
 logger = getLogger(__name__)
 
@@ -47,6 +49,75 @@ def estimate_ripple_band_power(lfps, sampling_frequency):
     return power.reindex(lfps.index)
 
 
+def estimate_gamma_low_freq_power(time, tetrode_info, multitaper_params=None):
+    if multitaper_params is None:
+        multitaper_params = MULTITAPER_PARAMETERS['10Hz']
+    is_brain_areas = (
+        tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
+    tetrode_keys = tetrode_info.loc[is_brain_areas].index
+
+    lfps = get_LFPs(tetrode_keys, ANIMALS).reindex(time)
+    lfps = lfps.resample('1ms').mean().fillna(method='pad').reindex(time)
+
+    m = Multitaper(lfps.values, **multitaper_params,
+                   start_time=lfps.index[0].total_seconds())
+    c = Connectivity.from_multitaper(m)
+    dimension_names = ['time', 'frequency', 'tetrode']
+    power = c.power()
+    data_vars = {
+        'power': (dimension_names, power)}
+
+    n_samples = int(
+        multitaper_params['time_window_duration'] * SAMPLING_FREQUENCY)
+    index = lfps.index[np.arange(1, power.shape[0] * n_samples + 1, n_samples)]
+
+    coordinates = {
+        'time': index,
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'tetrode': lfps.columns,
+    }
+
+    power = (xr.Dataset(data_vars, coords=coordinates)
+             .sel(frequency=slice(0, 125)))
+    power = power.reindex(time=lfps.index).interpolate_na('time')
+
+    low_gamma_power = (
+        power.sel(frequency=slice(20, 50)).mean('frequency')
+        .to_dataframe().unstack(level=0).interpolate())
+    low_gamma_power_change = low_gamma_power.transform(
+        lambda df: df / df.mean())
+    low_gamma_power_zscore = np.log(low_gamma_power).transform(
+        lambda df: (df - df.mean()) / df.std())
+
+    high_gamma_power = (
+        power.sel(frequency=slice(50, 125)).mean('frequency')
+        .to_dataframe().unstack(level=0).interpolate())
+    high_gamma_power_change = high_gamma_power.transform(
+        lambda df: df / df.mean())
+    high_gamma_power_zscore = np.log(high_gamma_power).transform(
+        lambda df: (df - df.mean()) / df.std())
+
+    low_freq_power = (
+        power.sel(frequency=slice(0, 20)).mean('frequency')
+        .to_dataframe().unstack(level=0).interpolate())
+
+    low_freq_power_change = low_freq_power.transform(
+        lambda df: df / df.mean())
+    low_freq_power_zscore = np.log(low_freq_power).transform(
+        lambda df: (df - df.mean()) / df.std())
+
+    return dict(low_gamma_power=low_gamma_power,
+                low_gamma_power_change=low_gamma_power_change,
+                low_gamma_power_zscore=low_gamma_power_zscore,
+                high_gamma_power=high_gamma_power,
+                high_gamma_power_change=high_gamma_power_change,
+                high_gamma_power_zscore=high_gamma_power_zscore,
+                low_freq_power=low_freq_power,
+                low_freq_power_change=low_freq_power_change,
+                low_freq_power_zscore=low_freq_power_zscore,
+                )
+
+
 def get_adhoc_ripple(time, speed, tetrode_info):
     is_brain_areas = (
         tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
@@ -63,6 +134,7 @@ def get_adhoc_ripple(time, speed, tetrode_info):
 
     ripple_times.index = ripple_times.index.rename('replay_number')
     ripple_labels = get_labels(ripple_times, time)
+    is_ripple = ripple_labels > 0
     ripple_times = ripple_times.assign(
         duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
 
@@ -72,9 +144,21 @@ def get_adhoc_ripple(time, speed, tetrode_info):
         index=ripple_lfps.index)
 
     ripple_power = estimate_ripple_band_power(ripple_lfps, SAMPLING_FREQUENCY)
+    interpolated_ripple_power = ripple_power.interpolate()
 
-    return (ripple_times, ripple_labels, ripple_filtered_lfps, ripple_power,
-            ripple_lfps)
+    ripple_power_change = interpolated_ripple_power.transform(
+        lambda df: df / df.mean())
+    ripple_power_zscore = np.log(interpolated_ripple_power).transform(
+        lambda df: (df - df.mean()) / df.std())
+
+    return dict(ripple_times=ripple_times,
+                ripple_labels=ripple_labels,
+                ripple_filtered_lfps=ripple_filtered_lfps,
+                ripple_power=ripple_power,
+                ripple_lfps=ripple_lfps,
+                ripple_power_change=ripple_power_change,
+                ripple_power_zscore=ripple_power_zscore,
+                is_ripple=is_ripple)
 
 
 def get_adhoc_multiunit(speed, tetrode_info, time_function):
@@ -93,6 +177,10 @@ def get_adhoc_multiunit(speed, tetrode_info, time_function):
         get_multiunit_population_firing_rate(
             multiunit_spikes, SAMPLING_FREQUENCY), index=time,
         columns=['firing_rate'])
+    multiunit_rate_change = multiunit_firing_rate.transform(
+        lambda df: df / df.mean())
+    multiunit_rate_zscore = np.log(multiunit_firing_rate).transform(
+        lambda df: (df - df.mean()) / df.std())
 
     multiunit_high_synchrony_times = multiunit_HSE_detector(
         time, multiunit_spikes, speed.values, SAMPLING_FREQUENCY,
@@ -102,11 +190,19 @@ def get_adhoc_multiunit(speed, tetrode_info, time_function):
         multiunit_high_synchrony_times.index.rename('replay_number'))
     multiunit_high_synchrony_labels = get_labels(
         multiunit_high_synchrony_times, time)
+    is_multiunit_high_synchrony = multiunit_high_synchrony_labels > 0
     multiunit_high_synchrony_times = multiunit_high_synchrony_times.assign(
         duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
 
-    return (multiunit, multiunit_spikes, multiunit_firing_rate,
-            multiunit_high_synchrony_times, multiunit_high_synchrony_labels)
+    return dict(
+        multiunit=multiunit,
+        multiunit_spikes=multiunit_spikes,
+        multiunit_firing_rate=multiunit_firing_rate,
+        multiunit_high_synchrony_times=multiunit_high_synchrony_times,
+        multiunit_high_synchrony_labels=multiunit_high_synchrony_labels,
+        multiunit_rate_change=multiunit_rate_change,
+        multiunit_rate_zscore=multiunit_rate_zscore,
+        is_multiunit_high_synchrony=is_multiunit_high_synchrony)
 
 
 def get_spikes(neuron_info, time_function):
@@ -119,6 +215,18 @@ def get_spikes(neuron_info, time_function):
         neuron_keys, ANIMALS, time_function).reindex(time)
 
     return spikes
+
+
+def get_position_boundaries(position_info):
+    max_df = position_info.groupby('arm_name').linear_position2.max()
+    min_df = position_info.groupby('arm_name').linear_position2.min()
+    return dict(center_well_position=min_df['Center Arm'],
+                choice_position=max_df['Center Arm'],
+                left_arm_start=min_df['Left Arm'],
+                left_well_position=max_df['Left Arm'],
+                right_arm_start=min_df['Right Arm'],
+                right_well_position=max_df['Right Arm'],
+                max_linear_distance=position_info.linear_distance.max())
 
 
 def load_data(epoch_key):
@@ -138,6 +246,7 @@ def load_data(epoch_key):
 
     time = position_info.index
     speed = position_info['speed']
+    position_boundaries = get_position_boundaries(position_info)
 
     neuron_info = make_neuron_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False)
@@ -146,32 +255,29 @@ def load_data(epoch_key):
     tetrode_info = make_tetrode_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False)
 
+    track_graph, _ = make_track_graph(epoch_key, ANIMALS)
+
     logger.info('Finding multiunit high synchrony events...')
-    (multiunit, multiunit_spikes, multiunit_firing_rate,
-     multiunit_high_synchrony_times,
-     multiunit_high_synchrony_labels) = get_adhoc_multiunit(
+    adhoc_multiunit = get_adhoc_multiunit(
         speed, tetrode_info, _time_function)
 
     logger.info('Finding ripple times...')
-    (ripple_times, ripple_labels, ripple_filtered_lfps,
-     ripple_power, ripple_lfps) = get_adhoc_ripple(time, speed, tetrode_info)
+    adhoc_ripple = get_adhoc_ripple(time, speed, tetrode_info)
+
+    logger.info('Estimating gamma power...')
+    gamma_low_freq_power = estimate_gamma_low_freq_power(time, tetrode_info)
 
     return {
         'position_info': position_info,
         'tetrode_info': tetrode_info,
         'neuron_info': neuron_info,
         'spikes': spikes,
-        'ripple_times': ripple_times,
-        'is_ripple': ripple_labels > 0,
-        'ripple_labels': ripple_labels,
-        'lfps': ripple_lfps,
-        'ripple_filtered_lfps': ripple_filtered_lfps,
-        'power': ripple_power,
-        'multiunit': multiunit,
-        'multiunit_high_synchrony_times': multiunit_high_synchrony_times,
-        'is_multiunit_high_synchrony': multiunit_high_synchrony_labels > 0,
-        'multiunit_high_synchrony_labels': multiunit_high_synchrony_labels,
-        'multiunit_firing_rate': multiunit_firing_rate,
+        'track_graph': track_graph,
+        'sampling_frequency': SAMPLING_FREQUENCY,
+        **position_boundaries,
+        **adhoc_ripple,
+        **adhoc_multiunit,
+        **gamma_low_freq_power,
     }
 
 
