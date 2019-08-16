@@ -124,17 +124,6 @@ def run_analysis(epoch_key, use_likelihoods,
         figure_name = f'fitted_lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
         plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
 
-    if 'multiunit' in data_types:
-        replay_detector.plot_multiunit(
-            data['multiunit'],
-            data['position_info'][position_metric], data['is_ripple'])
-        figure_name = f'multiunit_{animal}_{day:02d}_{epoch:02d}.png'
-        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
-
-        replay_detector.plot_fitted_multiunit_model()
-        figure_name = f'fitted_multiunit_{animal}_{day:02d}_{epoch:02d}.png'
-        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
-
     decode(data, replay_detector, use_likelihoods, epoch_key,
            SAMPLING_FREQUENCY, True, position_metric, speed_metric)
 
