@@ -53,10 +53,18 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
                                                   data_source)
-
-        decoder_results, _ = decode_replays(
-            data, replay_detector, is_replay, replay_info, sampling_frequency,
-            position_metric, use_smoother)
+        if data_source in ['sorted_spikes', 'clusterless']:
+            decoder_results = xr.concat(
+                [(detector_results
+                  .sel(time=slice(row.start_time, row.end_time),
+                       state='Replay')
+                  .posterior)
+                 for row in replay_info.itertuples()], dim=replay_info.index)
+        else:
+            is_training = data['position_info'][speed_metric] > 4
+            decoder_results, _ = decode_replays(
+                data, replay_detector, is_training, track_labels, replay_info,
+                sampling_frequency, position_metric, use_smoother)
         logging.info(f'Summarizing replays with {data_source}...')
         replay_info = summarize_replays(
             replay_info, decoder_results, data,
