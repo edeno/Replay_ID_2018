@@ -83,4 +83,5 @@ detector_parameters = {
     'replay_speed': 1,
     'spike_model_knot_spacing': 10,
     'spike_model_penalty': 0.5,
+    'movement_state_transition_type': 'w_track_1D_random_walk'
 }
