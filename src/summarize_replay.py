@@ -243,7 +243,10 @@ def compare_overlap(labels1, labels2, info1, info2, sampling_frequency,
         percentage_overlap = {
             'jaccard_similarity': lambda df: (
                 df.n_overlap / (
-                    df.total_labels1 + df.total_labels2 - df.n_overlap))
+                    df.total_labels1 + df.total_labels2 - df.n_overlap)),
+            'overlap_coefficient': lambda df: (
+                df.n_overlap / (
+                    np.minimum(df.total_labels1, df.total_labels2)))
         }
 
         overlap_info = (overlap_info
