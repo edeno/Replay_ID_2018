@@ -21,6 +21,9 @@ from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   summarize_replays)
 from src.visualization import plot_behavior
 
+logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
+                    datefmt='%d-%b-%y %H:%M:%S')
+
 
 def decode(data, replay_detector, track_labels, use_likelihoods,
            epoch_key, sampling_frequency, use_smoother, position_metric,
@@ -108,6 +111,7 @@ def run_analysis(epoch_key, use_likelihoods,
     plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
 
     replay_detector = ReplayDetector(**detector_parameters)
+    logging.info(replay_detector)
 
     track_labels = data['position_info'].arm_name
     replay_detector.fit(
