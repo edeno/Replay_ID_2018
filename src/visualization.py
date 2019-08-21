@@ -167,7 +167,7 @@ def plot_behavior(position_info, position_metric='linear_position2',
     axes[0].scatter(time, position, color='lightgrey')
     axes[0].scatter(time[is_inbound], position[is_inbound], label='Inbound')
     axes[0].scatter(time[is_outbound], position[is_outbound], label='Outbound')
-    axes[0].set_ylabel(f'{position_metric} (m)')
+    axes[0].set_ylabel(f'{position_metric} (cm)')
     axes[0].set_ylim((p_min, p_max))
     axes[0].legend()
 
@@ -176,7 +176,7 @@ def plot_behavior(position_info, position_metric='linear_position2',
                          where=is_correct, alpha=0.25)
     axes[1].plot(time, speed, color='#7570b3', linewidth=1)
     axes[1].axhline(4, linestyle='--', color='black')
-    axes[1].set_ylabel(f'{speed_metric} (m / s)')
+    axes[1].set_ylabel(f'{speed_metric} (cm / s)')
     axes[1].set_ylim((s_min, s_max))
     axes[1].set_xlabel('Time (s)')
 
