@@ -614,3 +614,30 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
         'actual_speed': replay_position_info.speed.mean(),
         'actual_velocity_center_well': replay_position_info.linear_velocity.mean(),
     }
+
+
+def get_overlap_times(*args):
+    is_overlap = args[0].replay_number.squeeze()
+    for df in args[1:]:
+        is_overlap = is_overlap & (df.replay_number.squeeze() > 0)
+
+    return is_overlap
+
+
+def get_overlap_replay_number(label, is_overlap):
+    return np.asarray(label.replay_number.loc[is_overlap].unique())
+
+
+def get_non_overlap_replay_number(label, is_overlap):
+    all_id = label.replay_number.unique()
+    all_id = set(all_id[all_id > 0])
+    overlap_id = set(get_overlap_replay_number(label, is_overlap))
+
+    return np.asarray(list(all_id - overlap_id))
+
+
+def convert_replay_number_to_id(replay_number, epoch_key, data_source):
+    animal, day, epoch = epoch_key
+    return pd.Index(replay_number).map(
+        lambda number:
+            f'{animal}_{day:02}_{epoch:02}_{number:03}_{data_source}')
