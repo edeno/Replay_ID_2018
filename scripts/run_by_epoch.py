@@ -7,7 +7,6 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
-import xarray as xr
 from replay_trajectory_classification import SortedSpikesDecoder
 
 from replay_identification import ReplayDetector
