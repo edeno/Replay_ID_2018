@@ -59,11 +59,10 @@ def summarize_replays(replay_info, decoder_results, data,
     replay_metrics = []
 
     for row in replay_info.itertuples():
-        posterior = decoder_results.acausal_posterior.sel(
-            time=slice(row.start_time, row.end_time))
         replay_metrics.append(
-            get_replay_metrics(row.start_time, row.end_time, posterior,
-                               **data))
+            get_replay_metrics(
+                row.start_time, row.end_time,
+                decoder_results.acausal_posterior, **data))
 
     replay_metrics = pd.DataFrame(replay_metrics, index=replay_info.index)
     replay_info = pd.concat((replay_info, replay_metrics), axis=1)
