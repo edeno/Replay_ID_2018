@@ -73,8 +73,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         if data_source in ['sorted_spikes', 'clusterless']:
             decoder_results = [(detector_results
                                 .sel(time=slice(row.start_time, row.end_time),
-                                     state='Replay')
-                                .posterior)
+                                     state='Replay'))
                                for row in replay_info.itertuples()]
         else:
             decoder_results = decode_replays(
