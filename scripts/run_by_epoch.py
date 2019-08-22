@@ -8,6 +8,7 @@ from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
 import xarray as xr
+from replay_trajectory_classification import SortedSpikesDecoder
 
 from replay_identification import ReplayDetector
 from src.load_data import load_data
@@ -28,9 +29,23 @@ logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
 def decode(data, replay_detector, track_labels, use_likelihoods,
            epoch_key, sampling_frequency, use_smoother, position_metric,
            speed_metric):
+    is_training = data['position_info'][speed_metric] > 4
+    decoder = SortedSpikesDecoder(
+        place_bin_size=replay_detector.place_bin_size,
+        replay_speed=replay_detector.replay_speed,
+        movement_var=replay_detector.movement_var,
+        knot_spacing=replay_detector.spike_model_knot_spacing,
+        spike_model_penalty=replay_detector.spike_model_penalty,
+        transition_type='w_track_1D_random_walk')
+    decoder.fit(
+        position=data['position_info'][position_metric],
+        spikes=data['spikes'], is_training=is_training,
+        track_labels=track_labels)
+
     data_sources = []
     labels = []
     infos = []
+
 
     for data_source, likelihoods in use_likelihoods.items():
         logging.info(f'Finding replays with {data_source}...')
@@ -64,10 +79,8 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
                   .posterior)
                  for row in replay_info.itertuples()], dim=replay_info.index)
         else:
-            is_training = data['position_info'][speed_metric] > 4
-            decoder_results, _ = decode_replays(
-                data, replay_detector, is_training, track_labels, replay_info,
-                sampling_frequency, position_metric, use_smoother)
+            decoder_results = decode_replays(
+                decoder, data, replay_info, sampling_frequency, use_smoother)
         logging.info(f'Summarizing replays with {data_source}...')
         replay_info = summarize_replays(
             replay_info, decoder_results, data,

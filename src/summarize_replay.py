@@ -5,7 +5,6 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import xarray as xr
-from replay_trajectory_classification import SortedSpikesDecoder
 from scipy.ndimage.measurements import label
 from scipy.stats import linregress
 
@@ -119,21 +118,8 @@ def summarize_replays(replay_info, decoder_results, data,
     return replay_info
 
 
-def decode_replays(data, replay_detector, is_training, track_labels,
-                   replay_info, sampling_frequency,
-                   position_metric='linear_position2', use_smoother=True):
-    decoder = SortedSpikesDecoder(
-        place_bin_size=replay_detector.place_bin_size,
-        replay_speed=replay_detector.replay_speed,
-        movement_var=replay_detector.movement_var,
-        knot_spacing=replay_detector.spike_model_knot_spacing,
-        spike_model_penalty=replay_detector.spike_model_penalty,
-        transition_type='w_track_1D_random_walk')
-    decoder.fit(
-        position=data['position_info'][position_metric],
-        spikes=data['spikes'], is_training=is_training,
-        track_labels=track_labels)
-
+def decode_replays(decoder, data, replay_info, sampling_frequency,
+                   use_smoother=True):
     test_spikes = reshape_to_segments(
         data['spikes'], replay_info.loc[:, ['start_time', 'end_time']],
         sampling_frequency=sampling_frequency)
@@ -141,10 +127,11 @@ def decode_replays(data, replay_detector, is_training, track_labels,
     decoder_results = [
         decoder.predict(test_spikes.loc[replay_number].values,
                         time=test_spikes.loc[replay_number].index,
-                        is_compute_acausal=use_smoother)
+                        is_compute_acausal=use_smoother).drop(
+                            ['likelihood', 'acausal_prior'])
         for replay_number in replay_info.index]
 
-    return decoder_results, decoder
+    return decoder_results
 
 
 def _get_replay_motion(replay_info, posterior_density,
