@@ -58,11 +58,11 @@ def summarize_replays(replay_info, decoder_results, data,
                       position_metric='linear_distance'):
     replay_metrics = []
 
-    for row in replay_info.itertuples():
+    for row, result in zip(replay_info.itertuples(), decoder_results):
         replay_metrics.append(
             get_replay_metrics(
                 row.start_time, row.end_time,
-                decoder_results.acausal_posterior, **data))
+                result.acausal_posterior, **data))
 
     replay_metrics = pd.DataFrame(replay_metrics, index=replay_info.index)
     replay_info = pd.concat((replay_info, replay_metrics), axis=1)
