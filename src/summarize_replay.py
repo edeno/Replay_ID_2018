@@ -125,7 +125,7 @@ def decode_replays(data, replay_detector, is_training, track_labels,
     decoder = SortedSpikesDecoder(
         place_bin_size=replay_detector.place_bin_size,
         replay_speed=replay_detector.replay_speed,
-        movement_var=replay_detector.movement_std ** 2,
+        movement_var=replay_detector.movement_var,
         knot_spacing=replay_detector.spike_model_knot_spacing,
         spike_model_penalty=replay_detector.spike_model_penalty,
         transition_type='w_track_1D_random_walk')
