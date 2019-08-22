@@ -141,7 +141,9 @@ def decode_replays(data, replay_detector, is_training, track_labels,
     decoder_results = [
         decoder.predict(test_spikes.loc[replay_number].values,
                         test_spikes.loc[replay_number].index,
-                        is_compute_acausal=use_smoother)
+                        is_compute_acausal=use_smoother,
+                        time=(test_spikes.loc[replay_number].index -
+                              test_spikes.loc[replay_number].index[0]))
         for replay_number in replay_info.index]
 
     return decoder_results, decoder
