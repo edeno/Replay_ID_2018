@@ -56,64 +56,17 @@ def get_replay_times(results, probability_threshold=0.8,
 def summarize_replays(replay_info, decoder_results, data,
                       sampling_frequency=1500,
                       position_metric='linear_distance'):
-    MOTION_BOUNDS = [-np.inf, -50, 50, np.inf]
+    replay_metrics = []
 
-    replay_position_info = (data['position_info']
-                            .loc[replay_info.start_time]
-                            .set_index(replay_info.index))
-    replay_info = pd.concat((replay_info, replay_position_info), axis=1)
+    for row in replay_info.itertuples():
+        posterior = decoder_results.acausal_posterior.sel(
+            time=slice(row.start_time, row.end_time))
+        replay_metrics.append(
+            get_replay_metrics(row.start_time, row.end_time, posterior,
+                               **data))
 
-    replay_type = []
-    replay_type_confidence = []
-    motion_slope = []
-    replay_movement_distance = []
-    n_unique_spiking = []
-    pct_unique_spiking = []
-    n_total_spikes = []
-    pct_total_spikes = []
-    avg_replay_speed = []
-
-    for r, decoder_result in zip(replay_info.itertuples(), decoder_results):
-
-        density = decoder_result.results.posterior_density.sum('state')
-
-        # Classify Replay
-        replay_type.append(decoder_result.predicted_state())
-        replay_type_confidence.append(
-            decoder_result.predicted_state_probability())
-
-        # Replay Motion
-        motion_slope.append(_get_replay_motion(r, density, position_metric))
-
-        # How far replay moves
-        replay_movement_distance.append(_get_replay_movement(density))
-
-        # Replay speed
-        avg_replay_speed.append(np.mean(np.abs(_get_replay_velocity(
-            density, sampling_frequency))))
-
-        # Add stats about spikes
-        n_unique = _n_unique_spiking(decoder_result.spikes)
-        n_neurons = decoder_result.spikes.shape[1]
-        n_total = _n_total_spikes(decoder_result.spikes)
-        n_possible_spikes = decoder_result.spikes.size
-        n_unique_spiking.append(n_unique)
-        pct_unique_spiking.append(n_unique / n_neurons)
-        n_total_spikes.append(n_total)
-        pct_total_spikes.append(n_total / n_possible_spikes)
-
-    replay_info['replay_type'] = replay_type
-    replay_info['replay_type_confidence'] = replay_type_confidence
-    replay_info['replay_motion_slope'] = motion_slope
-    replay_info['replay_motion_type'] = pd.cut(
-        replay_info['replay_motion_slope'], MOTION_BOUNDS,
-        labels=['Towards', 'Neither', 'Away'])
-    replay_info['replay_movement_distance'] = replay_movement_distance
-    replay_info['n_unique_spiking'] = n_unique_spiking
-    replay_info['pct_unique_spiking'] = pct_unique_spiking
-    replay_info['n_spikes'] = n_total_spikes
-    replay_info['pct_total_spikes'] = pct_total_spikes
-    replay_info['avg_replay_speed'] = avg_replay_speed
+    replay_metrics = pd.DataFrame(replay_metrics, index=replay_info.index)
+    replay_info = pd.concat((replay_info, replay_metrics), axis=1)
 
     return replay_info
 
