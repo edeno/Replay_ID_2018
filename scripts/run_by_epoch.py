@@ -46,7 +46,6 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
     labels = []
     infos = []
 
-
     for data_source, likelihoods in use_likelihoods.items():
         logging.info(f'Finding replays with {data_source}...')
         if data_source == 'ad_hoc_ripple':
@@ -72,12 +71,11 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
                                                   data_source)
         if data_source in ['sorted_spikes', 'clusterless']:
-            decoder_results = xr.concat(
-                [(detector_results
-                  .sel(time=slice(row.start_time, row.end_time),
-                       state='Replay')
-                  .posterior)
-                 for row in replay_info.itertuples()], dim=replay_info.index)
+            decoder_results = [(detector_results
+                                .sel(time=slice(row.start_time, row.end_time),
+                                     state='Replay')
+                                .posterior)
+                               for row in replay_info.itertuples()]
         else:
             decoder_results = decode_replays(
                 decoder, data, replay_info, sampling_frequency, use_smoother)
