@@ -7,7 +7,6 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
-import xarray as xr
 from replay_trajectory_classification import SortedSpikesDecoder
 
 from replay_identification import ReplayDetector
@@ -17,9 +16,9 @@ from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
                             detector_parameters)
 from src.save_data import save_overlap, save_power, save_replay_data
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
-                                  decode_replays, get_replay_times,
-                                  get_replay_triggered_power,
-                                  summarize_replays)
+                                  decode_replays, get_non_overlap_info,
+                                  get_replay_times, get_replay_triggered_power,
+                                  save_non_overlap, summarize_replays)
 from src.visualization import plot_behavior
 
 logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
@@ -73,8 +72,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         if data_source in ['sorted_spikes', 'clusterless']:
             decoder_results = [(detector_results
                                 .sel(time=slice(row.start_time, row.end_time),
-                                     state='Replay')
-                                .posterior)
+                                     state='Replay'))
                                for row in replay_info.itertuples()]
         else:
             decoder_results = decode_replays(
@@ -100,7 +98,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
     comb = itertools.combinations(zip(labels, infos, data_sources), 2)
     for (labels1, info1, data_source1), (labels2, info2, data_source2) in comb:
         logging.info(
-            'Analyzing replay overlap between'
+            'Analyzing replay overlap between '
             f'{data_source1} and {data_source2}...')
         overlap_info = compare_overlap(
             labels1, labels2, info1, info2, SAMPLING_FREQUENCY,
@@ -109,6 +107,13 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
             logging.warn('No overlap detected.')
         save_overlap(
             overlap_info, epoch_key, data_source1, data_source2, use_smoother)
+
+        logging.info('Analyzing replay non-overlap ...')
+        non_overlap_info = get_non_overlap_info(
+            labels1, labels2, data_source1, data_source2, epoch_key)
+        save_non_overlap(
+            non_overlap_info, epoch_key, data_source1, data_source2,
+            use_smoother)
 
 
 def run_analysis(epoch_key, use_likelihoods,

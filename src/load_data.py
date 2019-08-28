@@ -115,6 +115,7 @@ def estimate_gamma_low_freq_power(time, tetrode_info, multitaper_params=None):
                 low_freq_power=low_freq_power,
                 low_freq_power_change=low_freq_power_change,
                 low_freq_power_zscore=low_freq_power_zscore,
+                lfps=lfps,
                 )
 
 

@@ -583,3 +583,23 @@ def convert_replay_number_to_id(replay_number, epoch_key, data_source):
     return pd.Index(replay_number).map(
         lambda number:
             f'{animal}_{day:02}_{epoch:02}_{number:03}_{data_source}')
+
+
+def get_non_overlap_info(labels1, labels2, data_source1, data_source2,
+                         epoch_key):
+    is_overlap = get_overlap_times(labels1, labels2)
+
+    no_overlap_id1 = convert_replay_number_to_id(
+        get_non_overlap_replay_number(labels1, is_overlap), epoch_key,
+        data_source1)
+
+    no_overlap_id2 = convert_replay_number_to_id(
+        get_non_overlap_replay_number(labels2, is_overlap), epoch_key,
+        data_source2)
+
+    return pd.concat(
+        (pd.DataFrame({'data_source': data_source1,
+                       'no_overlap_with': data_source2}, index=no_overlap_id1),
+         pd.DataFrame({'data_source': data_source2,
+                       'no_overlap_with': data_source1}, index=no_overlap_id2))
+        , axis=0)
