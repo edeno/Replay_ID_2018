@@ -559,19 +559,19 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
 
 
 def get_overlap_times(*args):
-    is_overlap = args[0].replay_number.squeeze()
+    is_overlap = args[0].squeeze() > 0
     for df in args[1:]:
-        is_overlap = is_overlap & (df.replay_number.squeeze() > 0)
+        is_overlap = is_overlap & (df.squeeze() > 0)
 
     return is_overlap
 
 
 def get_overlap_replay_number(label, is_overlap):
-    return np.asarray(label.replay_number.loc[is_overlap].unique())
+    return np.asarray(label.loc[is_overlap].unique())
 
 
 def get_non_overlap_replay_number(label, is_overlap):
-    all_id = label.replay_number.unique()
+    all_id = label.unique()
     all_id = set(all_id[all_id > 0])
     overlap_id = set(get_overlap_replay_number(label, is_overlap))
 
