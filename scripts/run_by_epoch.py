@@ -14,11 +14,12 @@ from src.load_data import load_data
 from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
                             SAMPLING_FREQUENCY, USE_LIKELIHOODS,
                             detector_parameters)
-from src.save_data import save_overlap, save_power, save_replay_data
+from src.save_data import (save_non_overlap, save_overlap, save_power,
+                           save_replay_data)
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_non_overlap_info,
                                   get_replay_times, get_replay_triggered_power,
-                                  save_non_overlap, summarize_replays)
+                                  summarize_replays)
 from src.visualization import plot_behavior
 
 logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
