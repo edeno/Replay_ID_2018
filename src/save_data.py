@@ -29,6 +29,14 @@ def save_overlap(overlap, epoch_key, data_source1, data_source2, use_smoother):
                 f'{decoder_type}/overlap/{data_source1}/{data_source2}')
 
 
+def save_non_overlap(non_overlap, epoch_key, data_source1, data_source2,
+                     use_smoother):
+    decoder_type = 'smoother' if use_smoother else 'filter'
+    save_xarray(PROCESSED_DATA_DIR, epoch_key,
+                non_overlap.reset_index().to_xarray(),
+                f'{decoder_type}/non_overlap/{data_source1}/{data_source2}')
+
+
 def save_power(power, epoch_key, use_smoother, data_source):
     decoder_type = 'smoother' if use_smoother else 'filter'
     group = f'{decoder_type}/{data_source}/power'
