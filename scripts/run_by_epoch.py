@@ -84,18 +84,21 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
             replay_info, decoder_results, data,
             SAMPLING_FREQUENCY, position_metric)
 
-        power = get_replay_triggered_power(
-            data['lfps'], replay_info, data['tetrode_info'],
-            MULTITAPER_PARAMETERS['4Hz'], window_offset=(-0.250, 0.250),
-            sampling_frequency=SAMPLING_FREQUENCY)
-        save_power(power, epoch_key, use_smoother, data_source)
-
         # Save Data
         save_replay_data(data_source, epoch_key, replay_info,
                          is_replay, use_smoother)
         data_sources.append(data_source)
         labels.append(is_replay.replay_number)
         infos.append(replay_info)
+
+        try:
+            power = get_replay_triggered_power(
+                data['lfps'], replay_info, data['tetrode_info'],
+                MULTITAPER_PARAMETERS['4Hz'], window_offset=(-0.250, 0.250),
+                sampling_frequency=SAMPLING_FREQUENCY)
+            save_power(power, epoch_key, use_smoother, data_source)
+        except ValueError:
+            pass
 
     comb = itertools.combinations(zip(labels, infos, data_sources), 2)
     for (labels1, info1, data_source1), (labels2, info2, data_source2) in comb:
