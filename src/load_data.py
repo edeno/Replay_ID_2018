@@ -4,7 +4,7 @@ from os.path import join
 import numpy as np
 import pandas as pd
 import xarray as xr
-from sklearn.externals import joblib
+import joblib
 
 from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          get_all_spike_indicators,

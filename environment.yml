@@ -10,6 +10,7 @@ dependencies:
 - pandas
 - xarray
 - seaborn
+- joblib
 - loren_frank_data_processing
 - ripple_detection
 - spectral_connectivity

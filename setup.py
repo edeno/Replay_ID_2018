@@ -5,7 +5,7 @@ from setuptools import find_packages, setup
 INSTALL_REQUIRES = ['numpy', 'scipy', 'xarray', 'seaborn', 'pandas',
                     'loren_frank_data_processing', 'ripple_detection',
                     'replay_identification', 'replay_classification',
-                    'spectral_connectivity']
+                    'spectral_connectivity', 'joblib']
 TESTS_REQUIRE = ['pytest >= 2.7.1']
 
 setup(
