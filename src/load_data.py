@@ -1,10 +1,14 @@
 from logging import getLogger
 from os.path import join
 
+import joblib
 import numpy as np
 import pandas as pd
 import xarray as xr
-import joblib
+from ripple_detection import (Kay_ripple_detector, filter_ripple_band,
+                              get_multiunit_population_firing_rate,
+                              multiunit_HSE_detector)
+from spectral_connectivity import Connectivity, Multitaper
 
 from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          get_all_spike_indicators,
@@ -13,10 +17,6 @@ from loren_frank_data_processing import (get_all_multiunit_indicators,
                                          make_neuron_dataframe,
                                          make_tetrode_dataframe)
 from loren_frank_data_processing.position import make_track_graph
-from ripple_detection import (Kay_ripple_detector, filter_ripple_band,
-                              get_multiunit_population_firing_rate,
-                              multiunit_HSE_detector)
-from spectral_connectivity import Connectivity, Multitaper
 from src.parameters import (ANIMALS, BRAIN_AREAS, MULTITAPER_PARAMETERS,
                             PROCESSED_DATA_DIR, SAMPLING_FREQUENCY)
 

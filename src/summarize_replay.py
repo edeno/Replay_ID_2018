@@ -7,11 +7,11 @@ import pandas as pd
 import xarray as xr
 from scipy.ndimage.measurements import label
 from scipy.stats import linregress
+from spectral_connectivity import Connectivity, Multitaper
 
 from loren_frank_data_processing import reshape_to_segments
-from loren_frank_data_processing.track_segment_classification import (get_track_segments_from_graph,
-                                                                      project_points_to_segment)
-from spectral_connectivity import Connectivity, Multitaper
+from loren_frank_data_processing.track_segment_classification import (
+    get_track_segments_from_graph, project_points_to_segment)
 
 logger = getLogger(__name__)
 
@@ -601,5 +601,4 @@ def get_non_overlap_info(labels1, labels2, data_source1, data_source2,
         (pd.DataFrame({'data_source': data_source1,
                        'no_overlap_with': data_source2}, index=no_overlap_id1),
          pd.DataFrame({'data_source': data_source2,
-                       'no_overlap_with': data_source1}, index=no_overlap_id2))
-        , axis=0)
+                       'no_overlap_with': data_source1}, index=no_overlap_id2)), axis=0)

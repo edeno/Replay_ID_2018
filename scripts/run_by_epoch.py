@@ -8,9 +8,9 @@ from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
 from dask.distributed import Client
-from replay_trajectory_classification import SortedSpikesDecoder
-
 from replay_identification import ReplayDetector
+
+from replay_trajectory_classification import SortedSpikesDecoder
 from src.load_data import load_data
 from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
                             SAMPLING_FREQUENCY, USE_LIKELIHOODS,

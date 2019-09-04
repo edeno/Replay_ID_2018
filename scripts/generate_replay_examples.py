@@ -6,10 +6,10 @@ from collections import OrderedDict
 from os.path import join
 
 import matplotlib.pyplot as plt
+from replay_identification import ReplayDetector
 from sklearn.mixture import BayesianGaussianMixture
 from tqdm.auto import tqdm
 
-from replay_identification import ReplayDetector
 from src.load_data import load_data
 from src.parameters import ANIMALS, BRAIN_AREAS, FIGURE_DIR, SAMPLING_FREQUENCY
 from src.summarize_replay import get_replay_times

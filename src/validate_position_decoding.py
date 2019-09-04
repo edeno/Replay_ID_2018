@@ -1,13 +1,12 @@
 import numpy as np
 import pandas as pd
-from sklearn.metrics import mean_squared_error
-from sklearn.mixture import BayesianGaussianMixture
-from sklearn.model_selection import TimeSeriesSplit
-
 from replay_classification.core import filter, smooth
 from replay_identification import ReplayDetector
 from replay_identification.multiunit_likelihood import \
     estimate_replay_log_likelihood
+from sklearn.metrics import mean_squared_error
+from sklearn.mixture import BayesianGaussianMixture
+from sklearn.model_selection import TimeSeriesSplit
 
 _DEFAULT_MODEL_KWARGS = dict(n_components=30, tol=1E-6, max_iter=200,
                              weight_concentration_prior=1E1)
