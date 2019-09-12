@@ -16,6 +16,7 @@ dependencies:
 - spectral_connectivity
 - replay_identification
 - replay_classification
+- replay_trajectory_classification
 - jupyter
 - setuptools
 - "pytest >= 2.7.1"
