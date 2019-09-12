@@ -38,6 +38,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         knot_spacing=replay_detector.spike_model_knot_spacing,
         spike_model_penalty=replay_detector.spike_model_penalty,
         transition_type='w_track_1D_random_walk')
+    logging.info(decoder)
     decoder.fit(
         position=data['position_info'][position_metric],
         spikes=data['spikes'], is_training=is_training,
