@@ -86,6 +86,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
             SAMPLING_FREQUENCY, position_metric)
 
         # Save Data
+        logging.info(f'Saving {data_source}...')
         save_replay_data(data_source, epoch_key, replay_info,
                          is_replay, use_smoother)
         data_sources.append(data_source)
@@ -93,6 +94,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         infos.append(replay_info)
 
         try:
+            logging.info(f'Estimating {data_source} replay-triggered power...')
             power = get_replay_triggered_power(
                 data['lfps'], replay_info, data['tetrode_info'],
                 MULTITAPER_PARAMETERS['4Hz'], window_offset=(-0.250, 0.250),
