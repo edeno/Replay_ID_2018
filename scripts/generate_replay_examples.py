@@ -7,23 +7,16 @@ from os.path import join
 
 import matplotlib.pyplot as plt
 from replay_identification import ReplayDetector
-from sklearn.mixture import BayesianGaussianMixture
 from tqdm.auto import tqdm
 
 from src.load_data import load_data
-from src.parameters import ANIMALS, BRAIN_AREAS, FIGURE_DIR, SAMPLING_FREQUENCY
+from src.parameters import (ANIMALS, BRAIN_AREAS, FIGURE_DIR,
+                            SAMPLING_FREQUENCY, detector_parameters)
 from src.summarize_replay import get_replay_times
 from src.visualization import plot_replay_with_data
 
-logging.basicConfig(level=logging.INFO)
-
-USE_LIKELIHOODS = OrderedDict(
-    [('lfp_power', ['lfp_power']),
-     ('spikes', ['spikes']),
-     ('multiunit', ['multiunit']),
-     ('ad_hoc_ripple', ['ad_hoc_ripple']),
-     ('ad_hoc_multiunit', ['ad_hoc_multiunit'])]
-)
+logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
+                    datefmt='%d-%b-%y %H:%M:%S')
 
 
 def main(epoch_key, speed_metric='linear_speed',
@@ -31,9 +24,7 @@ def main(epoch_key, speed_metric='linear_speed',
     data = load_data(epoch_key, ANIMALS, SAMPLING_FREQUENCY,
                      BRAIN_AREAS, speed_metric)
 
-    replay_detector = ReplayDetector(
-        multiunit_density_model=BayesianGaussianMixture,
-        multiunit_model_kwargs=dict(n_components=100, tol=1E-8))
+    replay_detector = ReplayDetector(**detector_parameters)
     replay_detector.fit(
         is_replay=data['is_ripple'], speed=data['position_info'].linear_speed,
         position=data['position_info'][position_metric],
@@ -67,11 +58,11 @@ def main(epoch_key, speed_metric='linear_speed',
         use_likelihoods=['multiunit'],
         use_smoother=use_smoother)
 
-    spikes_replay_info, spikes_is_replay = get_replay_times(
+    spikes_replay_info, _ = get_replay_times(
         spikes_detector_results)
-    lfp_power_replay_info, lfp_power_is_replay = get_replay_times(
+    lfp_power_replay_info, _ = get_replay_times(
         lfp_power_detector_results)
-    multiunit_replay_info, multiunit_is_replay = get_replay_times(
+    multiunit_replay_info, _ = get_replay_times(
         multiunit_detector_results)
 
     replay_infos = OrderedDict(
@@ -79,14 +70,13 @@ def main(epoch_key, speed_metric='linear_speed',
          ('ad_hoc_multiunit', data['multiunit_high_synchrony_times']),
          ('lfp_power', lfp_power_replay_info),
          ('spikes', spikes_replay_info),
-         ('multiunit', multiunit_replay_info)],
+         ('clusterless', multiunit_replay_info)],
     )
 
     animal, day, epoch = epoch_key
-    smoother_type = 'smoother' if use_smoother else 'filter'
     for data_source, replay_info in replay_infos.items():
         logging.info(f'{data_source}...')
-        folder = join(FIGURE_DIR, f'replays_{data_source}_{smoother_type}')
+        folder = join(FIGURE_DIR, f'replays_{data_source}')
         os.makedirs(folder, exist_ok=True)
         for replay_number in tqdm(replay_info.index):
             fig, _ = plot_replay_with_data(
@@ -94,7 +84,8 @@ def main(epoch_key, speed_metric='linear_speed',
                 spikes_detector_results, lfp_power_detector_results,
                 multiunit_detector_results, epoch_key)
             figure_name = (
-                f'{animal}_{day:02d}_{epoch:02d}_{replay_number:03d}.png')
+                f'{animal}_{day:02d}_{epoch:02d}_{data_source}'
+                f'_{replay_number:03d}.png')
             figure_path = join(folder, figure_name)
             plt.savefig(figure_path, bbox_inches='tight')
             plt.close(fig)
