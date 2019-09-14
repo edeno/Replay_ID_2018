@@ -9,6 +9,7 @@ from subprocess import PIPE, run
 import matplotlib.pyplot as plt
 from dask.distributed import Client
 from replay_identification import ReplayDetector
+from tqdm.autonotebook import tqdm
 
 from replay_trajectory_classification import SortedSpikesDecoder
 from src.load_data import load_data
@@ -21,7 +22,7 @@ from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_non_overlap_info,
                                   get_replay_times, get_replay_triggered_power,
                                   summarize_replays)
-from src.visualization import plot_behavior
+from src.visualization import plot_behavior, plot_replay_with_data
 
 logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
@@ -47,6 +48,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
     data_sources = []
     labels = []
     infos = []
+    results = {}
 
     for data_source, likelihoods in use_likelihoods.items():
         logging.info(f'Finding replays with {data_source}...')
@@ -68,6 +70,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
                 use_likelihoods=likelihoods,
                 use_smoother=use_smoother)
             replay_info, is_replay = get_replay_times(detector_results)
+            results[data_source] = detector_results
 
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
@@ -121,6 +124,23 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
             labels1, labels2, data_source1, data_source2, epoch_key)
         save_non_overlap_info(
             non_overlap_info, epoch_key, data_source1, data_source2)
+
+    animal, day, epoch = epoch_key
+    for data_source, replay_info in zip(data_sources, infos):
+        logging.info(f'{data_source}...')
+        folder = os.path.join(FIGURE_DIR, f'replays_{data_source}')
+        os.makedirs(folder, exist_ok=True)
+        for replay_number in tqdm(replay_info.index):
+            fig, _ = plot_replay_with_data(
+                replay_number, data, replay_info, replay_detector,
+                results['sorted_spikes'], results['lfp_power'],
+                results['clusterless'], epoch_key)
+            figure_name = (
+                f'{animal}_{day:02d}_{epoch:02d}_{data_source}'
+                f'_{replay_number:03d}.png')
+            figure_path = os.path.join(folder, figure_name)
+            plt.savefig(figure_path, bbox_inches='tight')
+            plt.close(fig)
 
 
 def run_analysis(epoch_key, use_likelihoods,
