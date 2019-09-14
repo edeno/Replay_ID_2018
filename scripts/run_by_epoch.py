@@ -1,8 +1,8 @@
 import itertools
 import logging
+import os
 import sys
 from argparse import ArgumentParser
-from os.path import join
 from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
@@ -131,7 +131,7 @@ def run_analysis(epoch_key, use_likelihoods,
     data = load_data(epoch_key)
     plot_behavior(data['position_info'], position_metric)
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
-    plt.savefig(join(FIGURE_DIR, 'behavior', figure_name))
+    plt.savefig(os.path.join(FIGURE_DIR, 'behavior', figure_name))
 
     replay_detector = ReplayDetector(**detector_parameters)
     logging.info(replay_detector)
@@ -151,16 +151,16 @@ def run_analysis(epoch_key, use_likelihoods,
         replay_detector.plot_fitted_place_fields(
             sampling_frequency=SAMPLING_FREQUENCY, axes=axes)
         figure_name = f'spikes_{animal}_{day:02d}_{epoch:02d}.png'
-        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
+        plt.savefig(os.path.join(FIGURE_DIR, 'detector', figure_name))
 
     if 'lfp_power' in data_types:
         replay_detector.plot_lfp_power(data['ripple_power'], data['is_ripple'])
         figure_name = f'lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
-        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
+        plt.savefig(os.path.join(FIGURE_DIR, 'detector', figure_name))
 
         replay_detector.plot_fitted_lfp_power_model()
         figure_name = f'fitted_lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
-        plt.savefig(join(FIGURE_DIR, 'detector', figure_name))
+        plt.savefig(os.path.join(FIGURE_DIR, 'detector', figure_name))
 
     decode(data, replay_detector, track_labels, use_likelihoods,
            epoch_key, SAMPLING_FREQUENCY, use_smoother, position_metric,
