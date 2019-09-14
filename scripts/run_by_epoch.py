@@ -15,8 +15,8 @@ from src.load_data import load_data
 from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
                             SAMPLING_FREQUENCY, USE_LIKELIHOODS,
                             detector_parameters)
-from src.save_data import (save_non_overlap, save_overlap, save_power,
-                           save_replay_data)
+from src.save_data import (save_non_overlap_info, save_overlap_info,
+                           save_power, save_replay_data)
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_non_overlap_info,
                                   get_replay_times, get_replay_triggered_power,
@@ -88,7 +88,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         # Save Data
         logging.info(f'Saving {data_source}...')
         save_replay_data(data_source, epoch_key, replay_info,
-                         is_replay, use_smoother)
+                         is_replay)
         data_sources.append(data_source)
         labels.append(is_replay.replay_number)
         infos.append(replay_info)
@@ -99,7 +99,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
                 data['lfps'], replay_info, data['tetrode_info'],
                 MULTITAPER_PARAMETERS['4Hz'], window_offset=(-0.250, 0.250),
                 sampling_frequency=SAMPLING_FREQUENCY)
-            save_power(power, epoch_key, use_smoother, data_source)
+            save_power(power, epoch_key, data_source)
         except ValueError:
             pass
 
@@ -113,15 +113,14 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
             epoch_key, data_source1, data_source2)
         if overlap_info.shape[0] == 0:
             logging.warn('No overlap detected.')
-        save_overlap(
-            overlap_info, epoch_key, data_source1, data_source2, use_smoother)
+        save_overlap_info(
+            overlap_info, epoch_key, data_source1, data_source2)
 
         logging.info('Analyzing replay non-overlap ...')
         non_overlap_info = get_non_overlap_info(
             labels1, labels2, data_source1, data_source2, epoch_key)
-        save_non_overlap(
-            non_overlap_info, epoch_key, data_source1, data_source2,
-            use_smoother)
+        save_non_overlap_info(
+            non_overlap_info, epoch_key, data_source1, data_source2)
 
 
 def run_analysis(epoch_key, use_likelihoods,
