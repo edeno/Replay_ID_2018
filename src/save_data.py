@@ -19,13 +19,15 @@ def save_replay_data(data_source, epoch_key, replay_info, is_replay):
 
 def save_detector_parameters(epoch_key, replay_detector):
     epoch_identifier = _get_epoch_identifier(epoch_key)
-    file_name = f'{epoch_identifier}_replay_detector.gz'
+    file_name = os.path.join(
+        PROCESSED_DATA_DIR, f'{epoch_identifier}_replay_detector.gz')
     replay_detector.save_model(os.path.join(PROCESSED_DATA_DIR, file_name))
 
 
 def save_overlap_info(overlap_info, epoch_key, data_source1, data_source2):
     epoch_identifier = _get_epoch_identifier(epoch_key)
-    overlap_filename = (
+    overlap_filename = os.path.join(
+        PROCESSED_DATA_DIR,
         f'{epoch_identifier}_{data_source1}_{data_source2}_overlap_info.csv')
     overlap_info.to_csv(overlap_filename)
 
@@ -33,9 +35,10 @@ def save_overlap_info(overlap_info, epoch_key, data_source1, data_source2):
 def save_non_overlap_info(
         non_overlap_info, epoch_key, data_source1, data_source2):
     epoch_identifier = _get_epoch_identifier(epoch_key)
-    non_overlap_filename = (
-        f'{epoch_identifier}_{data_source1}_{data_source2}'
-        '_non_overlap_info.csv')
+    non_overlap_filename = os.path.join(
+        PROCESSED_DATA_DIR,
+        (f'{epoch_identifier}_{data_source1}_{data_source2}'
+         '_non_overlap_info.csv'))
     non_overlap_info.to_csv(non_overlap_filename)
 
 
