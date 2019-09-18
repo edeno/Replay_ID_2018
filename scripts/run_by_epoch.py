@@ -132,9 +132,10 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         os.makedirs(folder, exist_ok=True)
         for replay_number in tqdm(replay_info.index):
             fig, _ = plot_replay_with_data(
-                replay_number, data, replay_info, replay_detector,
+                replay_number, data, replay_info, epoch_key, replay_detector,
                 results['sorted_spikes'], results['lfp_power'],
-                results['clusterless'], epoch_key)
+                results['clusterless'], sampling_frequency=SAMPLING_FREQUENCY,
+                position_metric=position_metric, speed_metric=speed_metric)
             figure_name = (
                 f'{animal}_{day:02d}_{epoch:02d}_{data_source}'
                 f'_{replay_number:03d}.png')
