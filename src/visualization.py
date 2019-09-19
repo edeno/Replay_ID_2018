@@ -495,9 +495,9 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
 
     if 'bandpassed_lfps' in show_data_types:
         ripple_band_lfps = np.asarray(
-            data['ripple_band_lfps'].loc[start_time:end_time])
+            data['ripple_filtered_lfps'].loc[start_time:end_time])
         ripple_band_lfps /= np.ptp(
-            np.asarray(data['ripple_band_lfps']), axis=0)
+            np.asarray(data['ripple_filtered_lfps']), axis=0)
         ax = axes if n_plots == 1 else axes[ax_ind]
         for lfp_ind, lfp in enumerate(ripple_band_lfps.T):
             ax.plot(time, lfp + lfp_ind + 1)
