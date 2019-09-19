@@ -414,8 +414,8 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
         axes[0].legend(loc='upper right', frameon=False, fontsize=12)
 
     if 'spikes' in show_result_types:
-        spike_results.posterior.plot(x='time', y='position',
-                                     vmin=0.0, vmax=0.1, ax=axes[1])
+        spike_results.acausal_posterior.plot(x='time', y='position',
+                                             vmin=0.0, vmax=0.1, ax=axes[1])
         axes[1].plot(position_info.index.total_seconds(),
                      position_info[position_metric].values,
                      linewidth=3, linestyle='--', color='white')
@@ -437,8 +437,8 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
         axes[1].set_xlabel('')
 
     if 'clusterless' in show_result_types:
-        multiunit_results.posterior.plot(x='time', y='position',
-                                         vmin=0.0, robust=True, ax=axes[2])
+        multiunit_results.acausal_posterior.plot(x='time', y='position',
+                                                 vmin=0.0, robust=True, ax=axes[2])
         axes[2].plot(position_info.index.total_seconds(),
                      position_info[position_metric].values,
                      linewidth=3, linestyle='--', color='white')
