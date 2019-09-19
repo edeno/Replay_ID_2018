@@ -508,7 +508,7 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
         ax = axes if n_plots == 1 else axes[ax_ind]
         ax.plot(time, position_info[speed_metric].values, linewidth=3)
         ax.axhline(4, color='black', linestyle='--')
-        ax.set_ylabel('Speed (m/s)')
+        ax.set_ylabel('Speed (cm/s)')
 
     if epoch_key is not None:
         animal, day, epoch = epoch_key
