@@ -514,7 +514,7 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
         animal, day, epoch = epoch_key
         plt.suptitle(
             ('replay_number = '
-             f'{animal}_{day:02d}_{epoch:02d}_{replay_number:03d}'),
+             f'{animal}_{day:02d}_{(epoch):02d}_{int(replay_number):03d}'),
             fontsize=14, y=1.05)
 
     ax = axes if n_plots == 1 else axes[-1]
