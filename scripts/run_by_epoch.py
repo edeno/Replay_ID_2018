@@ -136,9 +136,7 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
                 results['sorted_spikes'], results['lfp_power'],
                 results['clusterless'], sampling_frequency=SAMPLING_FREQUENCY,
                 position_metric=position_metric, speed_metric=speed_metric)
-            figure_name = (
-                f'{animal}_{day:02d}_{epoch:02d}_{data_source}'
-                f'_{replay_number:03d}.png')
+            figure_name = f'{replay_number}.png'
             figure_path = os.path.join(folder, figure_name)
             plt.savefig(figure_path, bbox_inches='tight')
             plt.close(fig)
