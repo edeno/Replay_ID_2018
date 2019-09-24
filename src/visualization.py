@@ -437,8 +437,8 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
         axes[1].set_xlabel('')
 
     if 'clusterless' in show_result_types:
-        multiunit_results.acausal_posterior.plot(x='time', y='position',
-                                                 vmin=0.0, robust=True, ax=axes[2])
+        multiunit_results.acausal_posterior.plot(
+            x='time', y='position', vmin=0.0, robust=True, ax=axes[2])
         axes[2].plot(position_info.index.total_seconds(),
                      position_info[position_metric].values,
                      linewidth=3, linestyle='--', color='white')
@@ -512,10 +512,8 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
 
     if epoch_key is not None:
         animal, day, epoch = epoch_key
-        plt.suptitle(
-            ('replay_number = '
-             f'{animal}_{day:02d}_{(epoch):02d}_{int(replay_number):03d}'),
-            fontsize=14, y=1.05)
+        plt.suptitle(f'replay_number = {replay_number}',
+                     fontsize=14, y=1.05)
 
     ax = axes if n_plots == 1 else axes[-1]
     plt.xlim((time.min(), time.max()))
