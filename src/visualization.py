@@ -443,6 +443,21 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
                      position_info[position_metric].values,
                      linewidth=3, linestyle='--', color='white')
         axes[2].set_title('')
+        max_df = (data['position_info']
+                  .groupby('arm_name')[position_metric].max())
+        min_time = np.asarray(spike_results.time.min())
+        for arm_name, max_position in max_df.iteritems():
+            axes[2].axhline(max_position, color='grey',
+                            linestyle='-', linewidth=1)
+            axes[2].text(min_time, max_position - 5, arm_name, color='white',
+                         fontsize=11, verticalalignment='top')
+        min_df = (data['position_info']
+                  .groupby('arm_name')[position_metric].min())
+        for arm_name, min_position in min_df.iteritems():
+            axes[2].axhline(min_position, color='grey',
+                            linestyle='-', linewidth=1)
+        axes[1].tick_params(length=0)
+        axes[1].set_xlabel('')
 
     ax_ind = 0
     if len(show_result_types) > 0:
