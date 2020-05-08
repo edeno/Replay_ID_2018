@@ -119,17 +119,30 @@ def estimate_gamma_low_freq_power(time, tetrode_info, multitaper_params=None):
                 )
 
 
-def get_adhoc_ripple(time, speed, tetrode_info):
-    is_brain_areas = (
-        tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
-    tetrode_keys = tetrode_info.loc[
-        is_brain_areas & (tetrode_info.validripple == 1)].index
+def get_adhoc_ripple(epoch_key, tetrode_info):
+    LFP_SAMPLING_FREQUENCY = 1500
+    position_info = (
+        get_interpolated_position_dataframe(epoch_key, ANIMALS)
+        .dropna(subset=['linear_position', 'speed']))
+    speed = position_info['speed']
+    time = position_info.index
+
+    if ~np.all(np.isnan(tetrode_info.validripple.astype(float))):
+        tetrode_keys = tetrode_info.loc[
+            (tetrode_info.validripple == 1)].index
+    else:
+        is_brain_areas = (
+            tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
+        tetrode_keys = tetrode_info.loc[is_brain_areas].index
 
     ripple_lfps = get_LFPs(tetrode_keys, ANIMALS).reindex(time)
-    ripple_lfps = (
-        ripple_lfps.resample('1ms').mean().fillna(method='pad').reindex(time))
+    ripple_filtered_lfps = pd.DataFrame(
+        np.stack([filter_ripple_band(
+            ripple_lfps.values[:, ind], sampling_frequency=1500)
+            for ind in np.arange(ripple_lfps.shape[1])], axis=1),
+        index=ripple_lfps.index)
     ripple_times = Kay_ripple_detector(
-        time, ripple_lfps.values, speed.values, SAMPLING_FREQUENCY,
+        time, ripple_lfps.values, speed.values, LFP_SAMPLING_FREQUENCY,
         zscore_threshold=2.0, close_ripple_threshold=np.timedelta64(0, 'ms'),
         minimum_duration=np.timedelta64(15, 'ms'))
 
@@ -139,12 +152,8 @@ def get_adhoc_ripple(time, speed, tetrode_info):
     ripple_times = ripple_times.assign(
         duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
 
-    ripple_filtered_lfps = pd.DataFrame(
-        np.stack([filter_ripple_band(ripple_lfps.values[:, ind])
-                  for ind in np.arange(ripple_lfps.shape[1])], axis=1),
-        index=ripple_lfps.index)
-
-    ripple_power = estimate_ripple_band_power(ripple_lfps, SAMPLING_FREQUENCY)
+    ripple_power = estimate_ripple_band_power(
+        ripple_lfps, LFP_SAMPLING_FREQUENCY)
     interpolated_ripple_power = ripple_power.interpolate()
 
     ripple_power_change = interpolated_ripple_power.transform(
