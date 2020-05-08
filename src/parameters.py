@@ -71,7 +71,7 @@ MULTITAPER_PARAMETERS = {
 }
 
 detector_parameters = {
-    'movement_var': 4.0,
+    'movement_var': 6.0,
     'replay_speed': 1,
     'place_bin_size': 2.0,
     'lfp_model_kwargs': {'n_components': 1, 'max_iter': 200, 'tol': 1e-06},
