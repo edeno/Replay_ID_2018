@@ -208,12 +208,12 @@ def get_adhoc_multiunit(speed, tetrode_info, time_function):
 
 def get_spikes(neuron_info, time_function):
     time = time_function()
-    neuron_keys = neuron_info.loc[
+    neuron_info = neuron_info.loc[
         (neuron_info.numspikes > 100) &
         neuron_info.area.isin(BRAIN_AREAS) &
-        (neuron_info.type == 'principal')].index
+        (neuron_info.type == 'principal')]
     spikes = get_all_spike_indicators(
-        neuron_keys, ANIMALS, time_function).reindex(time)
+        neuron_info.index, ANIMALS, time_function).reindex(time)
 
     return spikes
 
@@ -251,7 +251,6 @@ def load_data(epoch_key):
 
     neuron_info = make_neuron_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False)
-
     spikes = get_spikes(neuron_info, _time_function)
     tetrode_info = make_tetrode_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False)
