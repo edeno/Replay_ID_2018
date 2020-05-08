@@ -271,7 +271,7 @@ def load_data(epoch_key):
         speed, tetrode_info, _time_function)
 
     logger.info('Finding ripple times...')
-    adhoc_ripple = get_adhoc_ripple(time, speed, tetrode_info)
+    adhoc_ripple = get_adhoc_ripple(epoch_key, tetrode_info)
 
     logger.info('Estimating gamma power...')
     gamma_low_freq_power = estimate_gamma_low_freq_power(time, tetrode_info)
