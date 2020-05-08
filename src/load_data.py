@@ -242,8 +242,8 @@ def load_data(epoch_key):
 
     position_info = (
         get_interpolated_position_dataframe(
-            epoch_key, ANIMALS, _time_function, spacing=30)
-        .dropna(subset=['linear_distance', 'linear_speed']))
+            epoch_key, ANIMALS, _time_function)
+        .dropna(subset=['linear_position', 'speed']))
 
     time = position_info.index
     speed = position_info['speed']
