@@ -221,7 +221,7 @@ def plot_replay_by_place_field(spikes, place_field_firing_rates,
 
 def plot_replay_spiking_ordered_by_place_fields(
         spikes, place_field_firing_rates, place_bin_centers,
-        ax=None, cmap=None, sampling_frequency=1, time=None):
+        ax=None, cmap=None, sampling_frequency=1, time=None, s=None):
     '''Plot spikes by the positiion of their maximum place field firing rate.
 
     Parameters
@@ -244,7 +244,7 @@ def plot_replay_spiking_ordered_by_place_fields(
     AVG_PLACE_FIELD_SIZE = 25
     n_colors = int(np.ceil(np.ptp(place_bin_centers) / AVG_PLACE_FIELD_SIZE))
     cmap = cmap or ListedColormap(sns.color_palette('hls', n_colors))
-
+    s = 25 if s is None else s
     n_time, n_neurons = spikes.shape
     if time is None:
         time = np.arange(n_time) / sampling_frequency
@@ -258,8 +258,10 @@ def plot_replay_spiking_ordered_by_place_fields(
     im = ax.scatter(time[time_ind], neuron_to_ordered_place_field[neuron_ind],
                     c=place_bin_centers[neuron_to_place_bin[neuron_ind]],
                     cmap=cmap, vmin=np.floor(place_bin_centers.min()),
-                    vmax=np.ceil(place_bin_centers.max()), s=25)
-    plt.colorbar(im, ax=ax, label='position')
+                    vmax=np.ceil(place_bin_centers.max()), s=s, marker='|',
+                    linewidth=1)
+    plt.colorbar(im, ax=ax, label='Place Field Center [cm]',
+                 ticks=[0, np.ceil(place_bin_centers.max())])
 
     ax.set_xlim(time[[0, -1]])
     ax.set_xlabel('Time')
