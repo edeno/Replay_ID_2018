@@ -3,8 +3,7 @@ from os.path import abspath, dirname, join, pardir
 
 from loren_frank_data_processing import Animal
 
-# LFP sampling frequency
-SAMPLING_FREQUENCY = 1000
+SAMPLING_FREQUENCY = 500
 
 # Data directories and definitions
 ROOT_DIR = join(abspath(dirname(__file__)), pardir)
