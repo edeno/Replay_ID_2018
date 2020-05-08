@@ -119,7 +119,7 @@ def estimate_gamma_low_freq_power(time, tetrode_info, multitaper_params=None):
                 )
 
 
-def get_adhoc_ripple(epoch_key, tetrode_info):
+def get_adhoc_ripple(epoch_key, tetrode_info, position_time):
     LFP_SAMPLING_FREQUENCY = 1500
     position_info = (
         get_interpolated_position_dataframe(epoch_key, ANIMALS)
@@ -147,7 +147,7 @@ def get_adhoc_ripple(epoch_key, tetrode_info):
         minimum_duration=np.timedelta64(15, 'ms'))
 
     ripple_times.index = ripple_times.index.rename('replay_number')
-    ripple_labels = get_labels(ripple_times, time)
+    ripple_labels = get_labels(ripple_times, position_time)
     is_ripple = ripple_labels > 0
     ripple_times = ripple_times.assign(
         duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
@@ -271,7 +271,7 @@ def load_data(epoch_key):
         speed, tetrode_info, _time_function)
 
     logger.info('Finding ripple times...')
-    adhoc_ripple = get_adhoc_ripple(epoch_key, tetrode_info)
+    adhoc_ripple = get_adhoc_ripple(epoch_key, tetrode_info, time)
 
     logger.info('Estimating gamma power...')
     gamma_low_freq_power = estimate_gamma_low_freq_power(time, tetrode_info)
