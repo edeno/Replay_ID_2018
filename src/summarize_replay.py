@@ -7,11 +7,11 @@ import pandas as pd
 import xarray as xr
 from scipy.ndimage.measurements import label
 from scipy.stats import linregress
-from spectral_connectivity import Connectivity, Multitaper
 
 from loren_frank_data_processing import reshape_to_segments
 from loren_frank_data_processing.track_segment_classification import (
     get_track_segments_from_graph, project_points_to_segment)
+from spectral_connectivity import Connectivity, Multitaper
 
 logger = getLogger(__name__)
 
@@ -353,7 +353,6 @@ def calculate_replay_distance(track_graph, map_estimate, actual_positions,
     -------
     replay_distance_from_actual_position : ndarray, shape (n_time,)
     replay_distance_from_center_well : ndarray, shape (n_time,)
-    replay_linear_position : ndarray, shape (n_time,)
 
     '''
 
@@ -364,7 +363,7 @@ def calculate_replay_distance(track_graph, map_estimate, actual_positions,
     n_position_dims = map_estimate.shape[1]
     if n_position_dims == 1:
         closest_ind = _get_closest_ind(
-            map_estimate, position_info.linear_position2)
+            map_estimate, position_info.linear_position)
     else:
         closest_ind = _get_closest_ind(
             map_estimate, position_info.loc[:, ['x_position', 'y_position']])
@@ -399,23 +398,23 @@ def calculate_replay_distance(track_graph, map_estimate, actual_positions,
             # Add actual position node
             node_name = 'actual_position'
             node1, node2 = actual_edge_id
-            track_graph1.add_path([node1, node_name, node2])
+            nx.add_path(track_graph1, [node1, node_name, node2])
             track_graph1.remove_edge(node1, node2)
             track_graph1.nodes[node_name]['pos'] = tuple(actual_pos)
 
             # Add replay position node
             node_name = 'replay_position'
             node1, node2 = replay_edge_id
-            track_graph1.add_path([node1, node_name, node2])
+            nx.add_path(track_graph1, [node1, node_name, node2])
             track_graph1.remove_edge(node1, node2)
             track_graph1.nodes[node_name]['pos'] = tuple(replay_pos)
         else:
             node1, node2 = actual_edge_id
 
-            track_graph1.add_path(
-                [node1, 'actual_position', 'replay_position', node2])
-            track_graph1.add_path(
-                [node1, 'replay_position', 'actual_position', node2])
+            nx.add_path(track_graph1,
+                        [node1, 'actual_position', 'replay_position', node2])
+            nx.add_path(track_graph1,
+                        [node1, 'replay_position', 'actual_position', node2])
 
             track_graph1.nodes['actual_position']['pos'] = tuple(actual_pos)
             track_graph1.nodes['replay_position']['pos'] = tuple(replay_pos)
@@ -424,8 +423,8 @@ def calculate_replay_distance(track_graph, map_estimate, actual_positions,
         # Calculate distance between all nodes
         for edge in track_graph1.edges(data=True):
             track_graph1.edges[edge[:2]]['distance'] = np.linalg.norm(
-                track_graph1.node[edge[0]]['pos'] -
-                np.array(track_graph1.node[edge[1]]['pos']))
+                track_graph1.nodes[edge[0]]['pos'] -
+                np.array(track_graph1.nodes[edge[1]]['pos']))
 
         replay_distance_from_actual_position.append(
             nx.shortest_path_length(
@@ -551,8 +550,8 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
         'sorted_spike_rate': (replay_spikes.mean() * sampling_frequency).mean(),
         'actual_linear_distance': replay_position_info.linear_distance.mean(),
         'actual_norm_linear_distance': replay_position_info.linear_distance.mean() / max_linear_distance,
-        'actual_linear_position': replay_position_info.linear_position2.mean(),
-        'actual_norm_linear_position': replay_position_info.linear_position2.mean() / left_well_position,
+        'actual_linear_position': replay_position_info.linear_position.mean(),
+        'actual_norm_linear_position': replay_position_info.linear_position.mean() / left_well_position,
         'actual_speed': replay_position_info.speed.mean(),
         'actual_velocity_center_well': replay_position_info.linear_velocity.mean(),
     }
