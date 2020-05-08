@@ -234,7 +234,7 @@ def load_data(epoch_key):
     logger.info('Loading data...')
     time = get_trial_time(epoch_key, ANIMALS)
     time = (pd.Series(np.ones_like(time, dtype=np.float), index=time)
-            .resample('1ms').mean()
+            .resample('2ms').mean()
             .index)
 
     def _time_function(*args, **kwargs):
