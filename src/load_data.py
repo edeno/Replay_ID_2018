@@ -252,8 +252,8 @@ def load_data(epoch_key):
     neuron_info = make_neuron_dataframe(ANIMALS).xs(
         epoch_key, drop_level=False)
     spikes = get_spikes(neuron_info, _time_function)
-    tetrode_info = make_tetrode_dataframe(ANIMALS).xs(
-        epoch_key, drop_level=False)
+
+    tetrode_info = make_tetrode_dataframe(ANIMALS, epoch_key=epoch_key)
 
     track_graph, _ = make_track_graph(epoch_key, ANIMALS)
 
