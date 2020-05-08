@@ -219,8 +219,8 @@ def get_spikes(neuron_info, time_function):
 
 
 def get_position_boundaries(position_info):
-    max_df = position_info.groupby('arm_name').linear_position2.max()
-    min_df = position_info.groupby('arm_name').linear_position2.min()
+    max_df = position_info.groupby('arm_name').linear_position.max()
+    min_df = position_info.groupby('arm_name').linear_position.min()
     return dict(center_well_position=min_df['Center Arm'],
                 choice_position=max_df['Center Arm'],
                 left_arm_start=min_df['Left Arm'],
