@@ -57,7 +57,7 @@ def estimate_gamma_low_freq_power(time, tetrode_info, multitaper_params=None):
     tetrode_keys = tetrode_info.loc[is_brain_areas].index
 
     lfps = get_LFPs(tetrode_keys, ANIMALS).reindex(time)
-    lfps = lfps.resample('1ms').mean().fillna(method='pad').reindex(time)
+    lfps = lfps.resample('2ms').mean().fillna(method='pad').reindex(time)
 
     m = Multitaper(lfps.values, **multitaper_params,
                    start_time=lfps.index[0].total_seconds())
