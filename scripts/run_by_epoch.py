@@ -37,8 +37,6 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         place_bin_size=replay_detector.place_bin_size,
         replay_speed=replay_detector.replay_speed,
         movement_var=replay_detector.movement_var,
-        knot_spacing=replay_detector.spike_model_knot_spacing,
-        spike_model_penalty=replay_detector.spike_model_penalty,
         transition_type='random_walk',
     )
     logging.info(decoder)
