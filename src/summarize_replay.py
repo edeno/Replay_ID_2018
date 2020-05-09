@@ -70,8 +70,7 @@ def summarize_replays(replay_info, decoder_results, data,
     return replay_info
 
 
-def decode_replays(decoder, data, replay_info, sampling_frequency,
-                   use_smoother=True):
+def decode_replays(decoder, data, replay_info, use_smoother=True):
     decoder_results = []
     for replay_number in replay_info.index:
         start_time, end_time = replay_info.loc[
