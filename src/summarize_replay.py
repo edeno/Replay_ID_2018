@@ -74,7 +74,7 @@ def decode_replays(decoder, data, replay_info, use_smoother=True):
     decoder_results = []
     for replay_number in replay_info.index:
         start_time, end_time = replay_info.loc[
-            replay_info, ['start_time', 'end_time']].values
+            replay_number, ['start_time', 'end_time']].values
         test_multiunit = data['multiunit'].sel(
             time=slice(start_time, end_time))
         decoder_results.append(
