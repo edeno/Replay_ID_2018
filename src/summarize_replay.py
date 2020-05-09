@@ -72,16 +72,16 @@ def summarize_replays(replay_info, decoder_results, data,
 
 def decode_replays(decoder, data, replay_info, sampling_frequency,
                    use_smoother=True):
-    test_spikes = reshape_to_segments(
-        data['spikes'], replay_info.loc[:, ['start_time', 'end_time']],
-        sampling_frequency=sampling_frequency)
-
-    decoder_results = [
-        decoder.predict(test_spikes.loc[replay_number].values,
-                        time=test_spikes.loc[replay_number].index,
-                        is_compute_acausal=use_smoother).drop(
-                            ['likelihood', 'acausal_prior'])
-        for replay_number in replay_info.index]
+    decoder_results = []
+    for replay_number in replay_info.index:
+        start_time, end_time = replay_info.loc[
+            replay_info, ['start_time', 'end_time'].values
+        test_multiunit = data['multiunit'].sel(
+            time=slice(start_time, end_time))
+        decoder_results.append(
+            decoder
+            .predict(test_multiunit, time=test_multiunit.time)
+            .drop(['likelihood', 'causal_posterior']))
 
     return decoder_results
 

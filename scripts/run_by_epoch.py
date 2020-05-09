@@ -8,10 +8,11 @@ from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
 from dask.distributed import Client
-from replay_identification import ReplayDetector
 from tqdm.autonotebook import tqdm
 
-from replay_trajectory_classification import SortedSpikesDecoder
+from loren_frank_data_processing.position import EDGE_ORDER, EDGE_SPACING
+from replay_identification import ReplayDetector
+from replay_trajectory_classification import ClusterlessDecoder
 from src.load_data import load_data
 from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
                             SAMPLING_FREQUENCY, USE_LIKELIHOODS,
@@ -32,18 +33,20 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
            epoch_key, sampling_frequency, use_smoother, position_metric,
            speed_metric):
     is_training = data['position_info'][speed_metric] > 4
-    decoder = SortedSpikesDecoder(
+    decoder = ClusterlessDecoder(
         place_bin_size=replay_detector.place_bin_size,
         replay_speed=replay_detector.replay_speed,
         movement_var=replay_detector.movement_var,
         knot_spacing=replay_detector.spike_model_knot_spacing,
         spike_model_penalty=replay_detector.spike_model_penalty,
-        transition_type='w_track_1D_random_walk')
+        transition_type='random_walk',
+    )
     logging.info(decoder)
     decoder.fit(
         position=data['position_info'][position_metric],
-        spikes=data['spikes'], is_training=is_training,
-        track_labels=track_labels)
+        multiunits=data['multiunit'], is_training=is_training,
+        track_graph=data['track_graph'], center_well_id=0,
+        edge_order=EDGE_ORDER, edge_spacing=EDGE_SPACING)
 
     data_sources = []
     labels = []
