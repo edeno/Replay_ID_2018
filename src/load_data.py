@@ -49,7 +49,56 @@ def estimate_ripple_band_power(lfps, sampling_frequency):
     return power.reindex(lfps.index)
 
 
-def estimate_gamma_low_freq_power(time, tetrode_info, multitaper_params=None):
+def estimate_theta_power(time, tetrode_info, multitaper_params=None):
+    if multitaper_params is None:
+        multitaper_params = MULTITAPER_PARAMETERS['4Hz']
+
+    is_brain_areas = (
+        tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
+    tetrode_keys = tetrode_info.loc[is_brain_areas].index
+
+    lfps = get_LFPs(tetrode_keys, ANIMALS).reindex(time)
+    lfps = lfps.resample('2ms').mean().fillna(method='pad').reindex(time)
+
+    m = Multitaper(lfps.values, **multitaper_params,
+                   start_time=lfps.index[0].total_seconds())
+    c = Connectivity.from_multitaper(m)
+    dimension_names = ['time', 'frequency', 'tetrode']
+    power = c.power()
+    data_vars = {
+        'power': (dimension_names, power)}
+
+    n_samples = int(
+        multitaper_params['time_window_duration'] * SAMPLING_FREQUENCY)
+    index = lfps.index[np.arange(1, power.shape[0] * n_samples + 1, n_samples)]
+
+    coordinates = {
+        'time': index,
+        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'tetrode': lfps.columns,
+    }
+
+    power = (xr.Dataset(data_vars, coords=coordinates)
+             .sel(frequency=slice(0, 125)))
+    power = power.reindex(time=lfps.index).interpolate_na('time')
+
+    theta_power = (
+        power.sel(frequency=slice(4, 12)).mean('frequency')
+        .to_dataframe().unstack(level=0).interpolate())
+
+    theta_power_change = theta_power.transform(
+        lambda df: df / df.mean())
+    theta_power_zscore = np.log(theta_power).transform(
+        lambda df: (df - df.mean()) / df.std())
+
+    return dict(
+        theta_power=theta_power,
+        theta_power_change=theta_power_change,
+        theta_power_zscore=theta_power_zscore,
+    )
+
+
+def estimate_gamma_power(time, tetrode_info, multitaper_params=None):
     if multitaper_params is None:
         multitaper_params = MULTITAPER_PARAMETERS['10Hz']
     is_brain_areas = (
@@ -97,24 +146,12 @@ def estimate_gamma_low_freq_power(time, tetrode_info, multitaper_params=None):
     high_gamma_power_zscore = np.log(high_gamma_power).transform(
         lambda df: (df - df.mean()) / df.std())
 
-    low_freq_power = (
-        power.sel(frequency=slice(0, 20)).mean('frequency')
-        .to_dataframe().unstack(level=0).interpolate())
-
-    low_freq_power_change = low_freq_power.transform(
-        lambda df: df / df.mean())
-    low_freq_power_zscore = np.log(low_freq_power).transform(
-        lambda df: (df - df.mean()) / df.std())
-
     return dict(low_gamma_power=low_gamma_power,
                 low_gamma_power_change=low_gamma_power_change,
                 low_gamma_power_zscore=low_gamma_power_zscore,
                 high_gamma_power=high_gamma_power,
                 high_gamma_power_change=high_gamma_power_change,
                 high_gamma_power_zscore=high_gamma_power_zscore,
-                low_freq_power=low_freq_power,
-                low_freq_power_change=low_freq_power_change,
-                low_freq_power_zscore=low_freq_power_zscore,
                 lfps=lfps,
                 )
 
@@ -274,7 +311,10 @@ def load_data(epoch_key):
     adhoc_ripple = get_adhoc_ripple(epoch_key, tetrode_info, time)
 
     logger.info('Estimating gamma power...')
-    gamma_low_freq_power = estimate_gamma_low_freq_power(time, tetrode_info)
+    gamma_power = estimate_gamma_power(time, tetrode_info)
+
+    logger.info('Estimating theta power...')
+    theta_power = estimate_theta_power(time, tetrode_info)
 
     return {
         'position_info': position_info,
@@ -286,7 +326,8 @@ def load_data(epoch_key):
         **position_boundaries,
         **adhoc_ripple,
         **adhoc_multiunit,
-        **gamma_low_freq_power,
+        **gamma_power,
+        **theta_power,
     }
 
 
