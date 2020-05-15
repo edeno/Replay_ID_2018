@@ -485,6 +485,15 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
     replay_position_info = position_info.loc[time_slice]
 
     map_estimate = maximum_a_posteriori_estimate(posterior)
+    hpd_threshold = highest_posterior_density(
+        posterior.sum("state"), coverage=0.95)
+    isin_hpd = posterior.sum("state") >= hpd_threshold[:, np.newaxis]
+    spatial_coverage = (
+        isin_hpd * np.diff(posterior.position)[0]).sum("position").values
+    n_position_bins = (posterior.sum("state", skipna=True)
+                       > 0).sum("position").values[0]
+    spatial_coverage_percentage = (isin_hpd.sum("position") /
+                                   n_position_bins).values
 
     actual_positions = (position_info
                         .loc[time_slice, ['x_position', 'y_position']]
@@ -564,6 +573,8 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
         'actual_speed': replay_position_info.speed.mean(),
         'actual_velocity_center_well': (
             replay_position_info.linear_velocity.mean()),
+        'spatial_coverage': np.median(spatial_coverage),
+        'spatial_coverage_percentage': np.median(spatial_coverage_percentage)
     }
 
 
@@ -614,3 +625,41 @@ def get_non_overlap_info(labels1, labels2, data_source1, data_source2,
             {'data_source': data_source2,
              'no_overlap_with': data_source1}, index=no_overlap_id2)),
         axis=0)
+
+
+def highest_posterior_density(posterior_density, coverage=0.95):
+    """
+    Same as credible interval
+    https://stats.stackexchange.com/questions/240749/how-to-find-95-credible-interval
+
+    Parameters
+    ----------
+    posterior_density : xarray.DataArray, shape (n_time, n_position_bins) or
+        shape (n_time, n_x_bins, n_y_bins)
+    coverage : float, optional
+
+    Returns
+    -------
+    threshold : ndarray, shape (n_time,)
+
+    """
+    try:
+        posterior_density = posterior_density.stack(
+            z=["x_position", "y_position"]
+        ).values
+    except KeyError:
+        posterior_density = posterior_density.values
+    const = np.sum(posterior_density, axis=1, keepdims=True)
+    sorted_norm_posterior = np.sort(posterior_density, axis=1)[:, ::-1] / const
+    posterior_less_than_coverage = np.cumsum(
+        sorted_norm_posterior, axis=1) >= coverage
+    crit_ind = np.argmax(posterior_less_than_coverage, axis=1)
+    # Handle case when there are no points in the posterior less than coverage
+    crit_ind[posterior_less_than_coverage.sum(axis=1) == 0] = (
+        posterior_density.shape[1] - 1
+    )
+
+    n_time = posterior_density.shape[0]
+    threshold = sorted_norm_posterior[(
+        np.arange(n_time), crit_ind)] * const.squeeze()
+    return threshold
