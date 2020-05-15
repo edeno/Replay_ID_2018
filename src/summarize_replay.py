@@ -446,7 +446,7 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
                        ripple_power_change, ripple_power_zscore,
                        low_gamma_power_change, low_gamma_power_zscore,
                        high_gamma_power_change, high_gamma_power_zscore,
-                       low_freq_power_change, low_freq_power_zscore,
+                       theta_power_change, theta_power_zscore,
                        multiunit_firing_rate, multiunit_rate_change,
                        multiunit_rate_zscore, position_info, track_graph,
                        sampling_frequency, max_linear_distance,
@@ -468,10 +468,10 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
     replay_high_gamma_power_zscore = (
         high_gamma_power_zscore.loc[time].values.mean())
 
-    replay_low_freq_power_change = (
-        low_freq_power_change.loc[time].values.mean())
-    replay_low_freq_power_zscore = (
-        low_freq_power_zscore.loc[time].values.mean())
+    replay_theta_power_change = (
+        theta_power_change.loc[time].values.mean())
+    replay_theta_power_zscore = (
+        theta_power_zscore.loc[time].values.mean())
 
     replay_multiunit_firing_rate = (
         multiunit_firing_rate.loc[time].values.mean())
@@ -538,8 +538,8 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
         'low_gamma_power_zscore': replay_low_gamma_power_zscore,
         'high_gamma_power_change': replay_high_gamma_power_change,
         'high_gamma_power_zscore': replay_high_gamma_power_zscore,
-        'low_freq_power_change': replay_low_freq_power_change,
-        'low_freq_power_zscore': replay_low_freq_power_zscore,
+        'theta_power_change': replay_theta_power_change,
+        'theta_power_zscore': replay_theta_power_zscore,
         'multiunit_firing_rate': replay_multiunit_firing_rate,
         'multiunit_firing_rate_change': replay_multiunit_firing_rate_change,
         'multiunit_firing_rate_zscore': replay_multiunit_firing_rate_zscore,
