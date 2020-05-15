@@ -452,42 +452,45 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
                        sampling_frequency, max_linear_distance,
                        left_well_position, **kwargs):
 
-    time = slice(start_time, end_time)
-    replay_spikes = spikes.loc[time]
+    time_slice = slice(start_time, end_time)
+    replay_spikes = spikes.loc[time_slice]
+    time = replay_spikes.index / np.timedelta64(1, 's')
 
-    replay_ripple_power_change = ripple_power_change.loc[time].values.mean()
-    replay_ripple_power_zscore = ripple_power_zscore.loc[time].values.mean()
+    replay_ripple_power_change = (ripple_power_change
+                                  .loc[time_slice].values.mean())
+    replay_ripple_power_zscore = (ripple_power_zscore
+                                  .loc[time_slice].values.mean())
 
     replay_low_gamma_power_change = (
-        low_gamma_power_change.loc[time].values.mean())
+        low_gamma_power_change.loc[time_slice].values.mean())
     replay_low_gamma_power_zscore = (
-        low_gamma_power_zscore.loc[time].values.mean())
+        low_gamma_power_zscore.loc[time_slice].values.mean())
 
     replay_high_gamma_power_change = (
-        high_gamma_power_change.loc[time].values.mean())
+        high_gamma_power_change.loc[time_slice].values.mean())
     replay_high_gamma_power_zscore = (
-        high_gamma_power_zscore.loc[time].values.mean())
+        high_gamma_power_zscore.loc[time_slice].values.mean())
 
     replay_theta_power_change = (
-        theta_power_change.loc[time].values.mean())
+        theta_power_change.loc[time_slice].values.mean())
     replay_theta_power_zscore = (
-        theta_power_zscore.loc[time].values.mean())
+        theta_power_zscore.loc[time_slice].values.mean())
 
     replay_multiunit_firing_rate = (
-        multiunit_firing_rate.loc[time].values.mean())
+        multiunit_firing_rate.loc[time_slice].values.mean())
     replay_multiunit_firing_rate_change = (
-        multiunit_rate_change.loc[time].values.mean())
+        multiunit_rate_change.loc[time_slice].values.mean())
     replay_multiunit_firing_rate_zscore = (
-        multiunit_rate_zscore.loc[time].values.mean())
-    replay_position_info = position_info.loc[time]
+        multiunit_rate_zscore.loc[time_slice].values.mean())
+    replay_position_info = position_info.loc[time_slice]
 
     map_estimate = maximum_a_posteriori_estimate(posterior)
 
     actual_positions = (position_info
-                        .loc[time, ['x_position', 'y_position']]
+                        .loc[time_slice, ['x_position', 'y_position']]
                         .values)
     actual_track_segment_ids = (position_info
-                                .loc[time, 'track_segment_id']
+                                .loc[time_slice, 'track_segment_id']
                                 .values.squeeze().astype(int))
 
     (replay_distance_from_actual_position,
@@ -506,29 +509,33 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
     return {
         'replay_distance_from_actual_position': np.mean(
             replay_distance_from_actual_position),
-        'replay_speed': np.mean(
-            np.abs(np.diff(replay_distance_from_actual_position)) /
-            sampling_frequency),
+        'replay_speed': np.abs(np.gradient(
+            replay_distance_from_actual_position, time)),
         'replay_velocity_actual_position': np.mean(
-            np.diff(replay_distance_from_actual_position) /
-            sampling_frequency),
+            np.gradient(replay_distance_from_actual_position, time)),
         'replay_velocity_center_well': np.mean(
-            np.diff(replay_distance_from_center_well)
-            / sampling_frequency),
+            np.gradient(replay_distance_from_center_well, time)),
         'replay_distance_from_center_well': np.mean(
             replay_distance_from_center_well),
         'replay_norm_distance_from_center_well': np.mean(
             replay_distance_from_center_well) / max_linear_distance,
-        'replay_start_distance_from_center_well': replay_distance_from_center_well[0],
-        'replay_norm_start_distance_from_center_well': replay_distance_from_center_well[0] / max_linear_distance,
-        'replay_end_distance_from_center_well': replay_distance_from_center_well[-1],
-        'replay_norm_end_distance_from_center_well': replay_distance_from_center_well[-1] / max_linear_distance,
+        'replay_start_distance_from_center_well': (
+            replay_distance_from_center_well[0]),
+        'replay_norm_start_distance_from_center_well': (
+            replay_distance_from_center_well[0] / max_linear_distance),
+        'replay_end_distance_from_center_well': (
+            replay_distance_from_center_well[-1]),
+        'replay_norm_end_distance_from_center_well': (
+            replay_distance_from_center_well[-1] / max_linear_distance),
         'replay_linear_position': np.mean(map_estimate),
-        'replay_norm_linear_position': np.mean(map_estimate) / left_well_position,
+        'replay_norm_linear_position': (
+            np.mean(map_estimate) / left_well_position),
         'replay_start_linear_position': map_estimate[0],
-        'replay_norm_start_linear_position': map_estimate[0] / left_well_position,
+        'replay_norm_start_linear_position': (
+            map_estimate[0] / left_well_position),
         'replay_end_linear_position': map_estimate[-1],
-        'replay_norm_end_linear_position': map_estimate[-1] / left_well_position,
+        'replay_norm_end_linear_position': (
+            map_estimate[-1] / left_well_position),
         'replay_total_distance': np.sum(
             np.abs(np.diff(replay_distance_from_actual_position))),
         'replay_total_displacement': replay_total_displacement,
@@ -546,13 +553,17 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
         'n_unique_spiking': (replay_spikes.sum() > 0).sum(),
         'frac_unique_spiking': (replay_spikes.sum() > 0).mean(),
         'n_total_spikes': replay_spikes.sum().sum(),
-        'sorted_spike_rate': (replay_spikes.mean() * sampling_frequency).mean(),
+        'sorted_spike_rate': (
+            replay_spikes.mean() * sampling_frequency).mean(),
         'actual_linear_distance': replay_position_info.linear_distance.mean(),
-        'actual_norm_linear_distance': replay_position_info.linear_distance.mean() / max_linear_distance,
+        'actual_norm_linear_distance': (
+            replay_position_info.linear_distance.mean() / max_linear_distance),
         'actual_linear_position': replay_position_info.linear_position.mean(),
-        'actual_norm_linear_position': replay_position_info.linear_position.mean() / left_well_position,
+        'actual_norm_linear_position': (
+            replay_position_info.linear_position.mean() / left_well_position),
         'actual_speed': replay_position_info.speed.mean(),
-        'actual_velocity_center_well': replay_position_info.linear_velocity.mean(),
+        'actual_velocity_center_well': (
+            replay_position_info.linear_velocity.mean()),
     }
 
 
@@ -596,7 +607,10 @@ def get_non_overlap_info(labels1, labels2, data_source1, data_source2,
         data_source2)
 
     return pd.concat(
-        (pd.DataFrame({'data_source': data_source1,
-                       'no_overlap_with': data_source2}, index=no_overlap_id1),
-         pd.DataFrame({'data_source': data_source2,
-                       'no_overlap_with': data_source1}, index=no_overlap_id2)), axis=0)
+        (pd.DataFrame(
+            {'data_source': data_source1,
+             'no_overlap_with': data_source2}, index=no_overlap_id1),
+         pd.DataFrame(
+            {'data_source': data_source2,
+             'no_overlap_with': data_source1}, index=no_overlap_id2)),
+        axis=0)
