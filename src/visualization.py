@@ -144,15 +144,14 @@ def compare_similarity_of_overlapping_replays(overlap_info):
     return g
 
 
-def plot_behavior(position_info, position_metric='linear_position2',
-                  speed_metric='speed'):
+def plot_behavior(position_info):
 
     time = np.asarray(position_info.index.total_seconds())
     is_inbound = position_info.task == 'Inbound'
     is_outbound = position_info.task == 'Outbound'
-    position = position_info[position_metric].values
+    position = position_info['linear_position'].values
     is_correct = position_info.is_correct.values
-    speed = position_info[speed_metric].values
+    speed = position_info['speed'].values
 
     p_min, p_max = np.nanmin(position), np.nanmax(position)
     s_min, s_max = np.nanmin(speed), np.nanmax(speed)
@@ -164,21 +163,23 @@ def plot_behavior(position_info, position_metric='linear_position2',
                          is_correct * p_max, color='#7fc97f',
                          where=is_correct,
                          alpha=0.25, label='Correct')
-    axes[0].scatter(time, position, color='lightgrey')
-    axes[0].scatter(time[is_inbound], position[is_inbound], label='Inbound')
-    axes[0].scatter(time[is_outbound], position[is_outbound], label='Outbound')
-    axes[0].set_ylabel(f'{position_metric} (cm)')
+    axes[0].scatter(time, position, color='lightgrey', s=1)
+    axes[0].scatter(time[is_inbound], position[is_inbound],
+                    label='Inbound', s=1)
+    axes[0].scatter(time[is_outbound], position[is_outbound],
+                    label='Outbound', s=1)
+    axes[0].set_ylabel('Linear Position [cm]')
     axes[0].set_ylim((p_min, p_max))
     axes[0].legend()
 
     axes[1].fill_between(time, is_correct * s_min,
                          is_correct * s_max, color='#7fc97f',
                          where=is_correct, alpha=0.25)
-    axes[1].plot(time, speed, color='#7570b3', linewidth=1)
+    axes[1].fill_between(time, speed, color='grey')
     axes[1].axhline(4, linestyle='--', color='black')
-    axes[1].set_ylabel(f'{speed_metric} (cm / s)')
+    axes[1].set_ylabel('Speed [cm / s]')
     axes[1].set_ylim((s_min, s_max))
-    axes[1].set_xlabel('Time (s)')
+    axes[1].set_xlabel('Time [s]')
 
     plt.xlim((time.min(), time.max()))
     sns.despine()

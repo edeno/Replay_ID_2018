@@ -5,12 +5,12 @@ import networkx as nx
 import numpy as np
 import pandas as pd
 import xarray as xr
-from scipy.ndimage.measurements import label
-from scipy.stats import linregress
-
 from loren_frank_data_processing import reshape_to_segments
 from loren_frank_data_processing.track_segment_classification import (
     get_track_segments_from_graph, project_points_to_segment)
+from ripple_detection.core import gaussian_smooth
+from scipy.ndimage.measurements import label
+from scipy.stats import linregress
 from spectral_connectivity import Connectivity, Multitaper
 
 logger = getLogger(__name__)
@@ -53,16 +53,14 @@ def get_replay_times(results, probability_threshold=0.8,
     return replay_times, labels
 
 
-def summarize_replays(replay_info, decoder_results, data,
-                      sampling_frequency=1500,
-                      position_metric='linear_distance'):
+def summarize_replays(replay_info, decoder_results, data):
     replay_metrics = []
 
     for row, result in zip(replay_info.itertuples(), decoder_results):
         replay_metrics.append(
             get_replay_metrics(
                 row.start_time, row.end_time,
-                result.acausal_posterior, **data))
+                result.acausal_posterior, data))
 
     replay_metrics = pd.DataFrame(replay_metrics, index=replay_info.index)
     replay_info = pd.concat((replay_info, replay_metrics), axis=1)
@@ -442,70 +440,34 @@ def calculate_replay_distance(track_graph, map_estimate, actual_positions,
             replay_distance_from_center_well)
 
 
-def get_replay_metrics(start_time, end_time, posterior, spikes,
-                       ripple_power_change, ripple_power_zscore,
-                       low_gamma_power_change, low_gamma_power_zscore,
-                       high_gamma_power_change, high_gamma_power_zscore,
-                       theta_power_change, theta_power_zscore,
-                       multiunit_firing_rate, multiunit_rate_change,
-                       multiunit_rate_zscore, position_info, track_graph,
-                       sampling_frequency, max_linear_distance,
-                       left_well_position, **kwargs):
+def get_replay_metrics(start_time, end_time, posterior, data):
 
     time_slice = slice(start_time, end_time)
-    replay_spikes = spikes.loc[time_slice]
+    replay_spikes = data['spikes'].loc[time_slice]
     time = replay_spikes.index / np.timedelta64(1, 's')
-
-    replay_ripple_power_change = (ripple_power_change
-                                  .loc[time_slice].values.mean())
-    replay_ripple_power_zscore = (ripple_power_zscore
-                                  .loc[time_slice].values.mean())
-
-    replay_low_gamma_power_change = (
-        low_gamma_power_change.loc[time_slice].values.mean())
-    replay_low_gamma_power_zscore = (
-        low_gamma_power_zscore.loc[time_slice].values.mean())
-
-    replay_high_gamma_power_change = (
-        high_gamma_power_change.loc[time_slice].values.mean())
-    replay_high_gamma_power_zscore = (
-        high_gamma_power_zscore.loc[time_slice].values.mean())
-
-    replay_theta_power_change = (
-        theta_power_change.loc[time_slice].values.mean())
-    replay_theta_power_zscore = (
-        theta_power_zscore.loc[time_slice].values.mean())
-
-    replay_multiunit_firing_rate = (
-        multiunit_firing_rate.loc[time_slice].values.mean())
-    replay_multiunit_firing_rate_change = (
-        multiunit_rate_change.loc[time_slice].values.mean())
-    replay_multiunit_firing_rate_zscore = (
-        multiunit_rate_zscore.loc[time_slice].values.mean())
-    replay_position_info = position_info.loc[time_slice]
+    replay_position_info = data["position_info"].loc[time_slice]
 
     map_estimate = maximum_a_posteriori_estimate(posterior)
     hpd_threshold = highest_posterior_density(
-        posterior.sum("state"), coverage=0.95)
-    isin_hpd = posterior.sum("state") >= hpd_threshold[:, np.newaxis]
+        posterior, coverage=0.95)
+    isin_hpd = posterior >= hpd_threshold[:, np.newaxis]
     spatial_coverage = (
         isin_hpd * np.diff(posterior.position)[0]).sum("position").values
-    n_position_bins = (posterior.sum("state", skipna=True)
-                       > 0).sum("position").values[0]
+    n_position_bins = (posterior > 0).sum("position").values[0]
     spatial_coverage_percentage = (isin_hpd.sum("position") /
                                    n_position_bins).values
 
-    actual_positions = (position_info
+    actual_positions = (data["position_info"]
                         .loc[time_slice, ['x_position', 'y_position']]
                         .values)
-    actual_track_segment_ids = (position_info
+    actual_track_segment_ids = (data["position_info"]
                                 .loc[time_slice, 'track_segment_id']
                                 .values.squeeze().astype(int))
 
     (replay_distance_from_actual_position,
      replay_distance_from_center_well) = calculate_replay_distance(
-        track_graph, map_estimate, actual_positions,
-        actual_track_segment_ids, position_info)
+        data["track_graph"], map_estimate, actual_positions,
+        actual_track_segment_ids, data["position_info"])
     try:
         replay_total_displacement = np.abs(
             replay_distance_from_actual_position[-1] -
@@ -515,66 +477,76 @@ def get_replay_metrics(start_time, end_time, posterior, spikes,
 
     map_estimate = map_estimate.squeeze()
 
+    replay_speed = np.abs(np.gradient(
+        replay_distance_from_center_well, time))
+    SMOOTH_SIGMA = 0.0025
+    replay_speed = gaussian_smooth(
+        replay_speed, SMOOTH_SIGMA, data['sampling_frequency'])
+    replay_velocity_actual_position = np.gradient(
+        replay_distance_from_actual_position, time)
+    replay_velocity_center_well = np.gradient(
+        replay_distance_from_center_well, time)
+
+    distance_change = np.abs(np.diff(replay_distance_from_center_well))
+    distance_change = np.insert(distance_change, 0, 0)
+
     return {
-        'replay_distance_from_actual_position': np.mean(
+        'avg_replay_distance_from_actual_position': np.mean(
             replay_distance_from_actual_position),
-        'replay_speed': np.abs(np.gradient(
-            replay_distance_from_actual_position, time)),
-        'replay_velocity_actual_position': np.mean(
-            np.gradient(replay_distance_from_actual_position, time)),
-        'replay_velocity_center_well': np.mean(
-            np.gradient(replay_distance_from_center_well, time)),
-        'replay_distance_from_center_well': np.mean(
+        'avg_replay_speed': np.mean(replay_speed),
+        'avg_replay_velocity_actual_position': np.mean(
+            replay_velocity_actual_position),
+        'avg_replay_velocity_center_well': np.mean(
+            replay_velocity_center_well),
+        'avg_replay_distance_from_center_well': np.mean(
             replay_distance_from_center_well),
-        'replay_norm_distance_from_center_well': np.mean(
-            replay_distance_from_center_well) / max_linear_distance,
+        'avg_replay_norm_distance_from_center_well': np.mean(
+            replay_distance_from_center_well) / data['max_linear_distance'],
         'replay_start_distance_from_center_well': (
             replay_distance_from_center_well[0]),
         'replay_norm_start_distance_from_center_well': (
-            replay_distance_from_center_well[0] / max_linear_distance),
+            replay_distance_from_center_well[0] / data['max_linear_distance']),
         'replay_end_distance_from_center_well': (
             replay_distance_from_center_well[-1]),
         'replay_norm_end_distance_from_center_well': (
-            replay_distance_from_center_well[-1] / max_linear_distance),
-        'replay_linear_position': np.mean(map_estimate),
-        'replay_norm_linear_position': (
-            np.mean(map_estimate) / left_well_position),
+            replay_distance_from_center_well[-1] /
+            data['max_linear_distance']),
+        'avg_replay_linear_position': np.mean(map_estimate),
+        'avg_replay_norm_linear_position': (
+            np.mean(map_estimate) / data['left_well_position']),
         'replay_start_linear_position': map_estimate[0],
         'replay_norm_start_linear_position': (
-            map_estimate[0] / left_well_position),
+            map_estimate[0] / data['left_well_position']),
         'replay_end_linear_position': map_estimate[-1],
         'replay_norm_end_linear_position': (
-            map_estimate[-1] / left_well_position),
-        'replay_total_distance': np.sum(
-            np.abs(np.diff(replay_distance_from_actual_position))),
+            map_estimate[-1] / data['left_well_position']),
+        'replay_total_distance': np.sum(distance_change),
         'replay_total_displacement': replay_total_displacement,
-        'ripple_power_change': replay_ripple_power_change,
-        'ripple_power_zscore': replay_ripple_power_zscore,
-        'low_gamma_power_change': replay_low_gamma_power_change,
-        'low_gamma_power_zscore': replay_low_gamma_power_zscore,
-        'high_gamma_power_change': replay_high_gamma_power_change,
-        'high_gamma_power_zscore': replay_high_gamma_power_zscore,
-        'theta_power_change': replay_theta_power_change,
-        'theta_power_zscore': replay_theta_power_zscore,
-        'multiunit_firing_rate': replay_multiunit_firing_rate,
-        'multiunit_firing_rate_change': replay_multiunit_firing_rate_change,
-        'multiunit_firing_rate_zscore': replay_multiunit_firing_rate_zscore,
         'n_unique_spiking': (replay_spikes.sum() > 0).sum(),
         'frac_unique_spiking': (replay_spikes.sum() > 0).mean(),
         'n_total_spikes': replay_spikes.sum().sum(),
         'sorted_spike_rate': (
-            replay_spikes.mean() * sampling_frequency).mean(),
-        'actual_linear_distance': replay_position_info.linear_distance.mean(),
-        'actual_norm_linear_distance': (
-            replay_position_info.linear_distance.mean() / max_linear_distance),
-        'actual_linear_position': replay_position_info.linear_position.mean(),
-        'actual_norm_linear_position': (
-            replay_position_info.linear_position.mean() / left_well_position),
-        'actual_speed': replay_position_info.speed.mean(),
-        'actual_velocity_center_well': (
-            replay_position_info.linear_velocity.mean()),
-        'spatial_coverage': np.median(spatial_coverage),
-        'spatial_coverage_percentage': np.median(spatial_coverage_percentage)
+            replay_spikes.mean() * data['sampling_frequency']).mean(),
+        'avg_actual_linear_distance': (
+            replay_position_info.linear_distance.mean()),
+        'avg_actual_norm_linear_distance': (
+            replay_position_info.linear_distance.mean() /
+            data['max_linear_distance']),
+        'avg_actual_linear_position': (
+            replay_position_info.linear_position.mean()),
+        'avg_actual_norm_linear_position': (
+            replay_position_info.linear_position.mean() /
+            data['left_well_position']),
+        'max_actual_speed': replay_position_info.speed.max(),
+        'median_spatial_coverage': np.median(spatial_coverage),
+        'median_spatial_coverage_percentage': np.median(
+            spatial_coverage_percentage),
+        'max_ripple_consensus_trace_zscore': float(
+            data['ripple_consensus_trace_zscore']
+            .loc[start_time:end_time].max()),
+        'max_instantaneous_ripple_power_change': float(
+            data['instantaneous_ripple_power_change']
+            .loc[start_time:end_time].max()),
     }
 
 

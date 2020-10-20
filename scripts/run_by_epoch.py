@@ -7,9 +7,8 @@ from signal import SIGUSR1, SIGUSR2, signal
 from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
+import numpy as np
 from dask.distributed import Client
-from tqdm.autonotebook import tqdm
-
 from loren_frank_data_processing.position import EDGE_ORDER, EDGE_SPACING
 from replay_identification import ReplayDetector
 from replay_trajectory_classification import ClusterlessDecoder
@@ -24,15 +23,15 @@ from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   get_replay_times, get_replay_triggered_power,
                                   summarize_replays)
 from src.visualization import plot_behavior, plot_replay_with_data
+from tqdm.autonotebook import tqdm
 
 logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
 
 
-def decode(data, replay_detector, track_labels, use_likelihoods,
-           epoch_key, sampling_frequency, use_smoother, position_metric,
-           speed_metric):
-    is_training = data['position_info'][speed_metric] > 4
+def decode(data, replay_detector, use_likelihoods,
+           epoch_key, sampling_frequency):
+    is_training = data['position_info'].speed > 4
     decoder = ClusterlessDecoder(
         place_bin_size=replay_detector.place_bin_size,
         replay_speed=replay_detector.replay_speed,
@@ -41,10 +40,13 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
     )
     logging.info(decoder)
     decoder.fit(
-        position=data['position_info'][position_metric],
-        multiunits=data['multiunit'], is_training=is_training,
-        track_graph=data['track_graph'], center_well_id=0,
-        edge_order=EDGE_ORDER, edge_spacing=EDGE_SPACING)
+        position=data['position_info'].linear_position,
+        multiunits=data['multiunit'],
+        is_training=is_training,
+        track_graph=data['track_graph'],
+        center_well_id=0,
+        edge_order=EDGE_ORDER,
+        edge_spacing=EDGE_SPACING)
 
     data_sources = []
     labels = []
@@ -63,13 +65,13 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
             detector_results = []
         else:
             detector_results = replay_detector.predict(
-                speed=data['position_info'][speed_metric],
-                position=data['position_info'][position_metric],
-                lfp_power=data['ripple_power'],
-                spikes=data['spikes'], multiunit=data['multiunit'],
+                speed=data['position_info'].speed,
+                position=data['position_info'].linear_position,
+                spikes=data['spikes'],
+                multiunit=data['multiunit'],
                 time=data['position_info'].index,
                 use_likelihoods=likelihoods,
-                use_smoother=use_smoother)
+                use_smoother=True)
             replay_info, is_replay = get_replay_times(detector_results)
             results[data_source] = detector_results
 
@@ -77,17 +79,18 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
                                                   data_source)
         if data_source in ['sorted_spikes', 'clusterless']:
-            decoder_results = [(detector_results
-                                .sel(time=slice(row.start_time, row.end_time),
-                                     state='Replay'))
+            latent_position = detector_results[
+                ['acausal_posterior', 'replay_probability']].sum('state')
+            decoder_results = [(latent_position
+                                .sel(time=slice(row.start_time, row.end_time)))
                                for row in replay_info.itertuples()]
         else:
             decoder_results = decode_replays(
-                decoder, data, replay_info, sampling_frequency, use_smoother)
+                decoder, data, replay_info, sampling_frequency)
         logging.info(f'Summarizing replays with {data_source}...')
         replay_info = summarize_replays(
             replay_info, decoder_results, data,
-            SAMPLING_FREQUENCY, position_metric)
+            SAMPLING_FREQUENCY)
 
         # Save Data
         logging.info(f'Saving {data_source}...')
@@ -135,56 +138,52 @@ def decode(data, replay_detector, track_labels, use_likelihoods,
             fig, _ = plot_replay_with_data(
                 replay_number, data, replay_info, epoch_key, replay_detector,
                 results['sorted_spikes'], results['lfp_power'],
-                results['clusterless'], sampling_frequency=SAMPLING_FREQUENCY,
-                position_metric=position_metric, speed_metric=speed_metric)
+                results['clusterless'], sampling_frequency=SAMPLING_FREQUENCY)
             figure_name = f'{replay_number}.png'
             figure_path = os.path.join(folder, figure_name)
             plt.savefig(figure_path, bbox_inches='tight')
             plt.close(fig)
 
 
-def run_analysis(epoch_key, use_likelihoods,
-                 position_metric='linear_position2',
-                 speed_metric='speed', use_smoother=True):
+def run_analysis(epoch_key, use_likelihoods):
     animal, day, epoch = epoch_key
     data_types = set(itertools.chain(*use_likelihoods.values()))
     data = load_data(epoch_key)
-    plot_behavior(data['position_info'], position_metric)
+    assert np.allclose(data['is_ripple'].shape[0],
+                       data['position_info'].shape[0],
+                       data['spikes'].shape[0],
+                       data['multiunit'].shape[0])
+    plot_behavior(data['position_info'])
     figure_name = f'behavior_{animal}_{day:02d}_{epoch:02d}.png'
     plt.savefig(os.path.join(FIGURE_DIR, 'behavior', figure_name))
 
     replay_detector = ReplayDetector(**detector_parameters)
     logging.info(replay_detector)
 
-    track_labels = data['position_info'].arm_name
     replay_detector.fit(
-        is_ripple=data['is_ripple'], speed=data['position_info'][speed_metric],
-        position=data['position_info'][position_metric],
-        lfp_power=data['ripple_power'], spikes=data['spikes'],
-        multiunit=data['multiunit'], track_labels=track_labels)
+        is_ripple=data['is_ripple'],
+        speed=data['position_info'].speed,
+        position=data['position_info'].linear_position,
+        spikes=data['spikes'],
+        multiunit=data['multiunit'],
+        track_graph=data['track_graph'],
+        center_well_id=0,
+        edge_order=EDGE_ORDER,
+        edge_spacing=EDGE_SPACING,
+    )
 
     # Plot detector fits
     if 'spikes' in data_types:
         axes = replay_detector.plot_spikes(
-            data['spikes'], data['position_info'][position_metric],
+            data['spikes'], data['position_info'].linear_position,
             data['is_ripple'], sampling_frequency=SAMPLING_FREQUENCY)
         replay_detector.plot_fitted_place_fields(
             sampling_frequency=SAMPLING_FREQUENCY, axes=axes)
         figure_name = f'spikes_{animal}_{day:02d}_{epoch:02d}.png'
         plt.savefig(os.path.join(FIGURE_DIR, 'detector', figure_name))
 
-    if 'lfp_power' in data_types:
-        replay_detector.plot_lfp_power(data['ripple_power'], data['is_ripple'])
-        figure_name = f'lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
-        plt.savefig(os.path.join(FIGURE_DIR, 'detector', figure_name))
-
-        replay_detector.plot_fitted_lfp_power_model()
-        figure_name = f'fitted_lfp_power_{animal}_{day:02d}_{epoch:02d}.png'
-        plt.savefig(os.path.join(FIGURE_DIR, 'detector', figure_name))
-
-    decode(data, replay_detector, track_labels, use_likelihoods,
-           epoch_key, SAMPLING_FREQUENCY, use_smoother, position_metric,
-           speed_metric)
+    decode(data, replay_detector, use_likelihoods,
+           epoch_key, SAMPLING_FREQUENCY)
 
     logging.info('Done...')
 
