@@ -4,7 +4,7 @@ from loren_frank_data_processing import save_xarray
 from src.parameters import PROCESSED_DATA_DIR
 
 
-def save_replay_data(data_source, epoch_key, replay_info, is_replay):
+def save_replay_info(data_source, epoch_key, replay_info, is_replay):
     epoch_identifier = _get_epoch_identifier(epoch_key)
 
     replay_info_filename = os.path.join(
@@ -45,6 +45,11 @@ def save_non_overlap_info(
 def save_power(power, epoch_key, data_source):
     group = f'{data_source}/power'
     save_xarray(PROCESSED_DATA_DIR, epoch_key, power, group)
+
+
+def save_posterior(results, epoch_key, data_source):
+    group = f'{data_source}/posterior'
+    save_xarray(PROCESSED_DATA_DIR, epoch_key, results, group)
 
 
 def _get_epoch_identifier(epoch_key):

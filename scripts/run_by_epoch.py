@@ -14,10 +14,10 @@ from replay_identification import ReplayDetector
 from replay_trajectory_classification import ClusterlessDecoder
 from src.load_data import load_data
 from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
-                            PROCESSED_DATA_DIR, SAMPLING_FREQUENCY,
-                            USE_LIKELIHOODS, detector_parameters)
+                            SAMPLING_FREQUENCY, USE_LIKELIHOODS,
+                            detector_parameters)
 from src.save_data import (save_non_overlap_info, save_overlap_info,
-                           save_power, save_replay_data)
+                           save_posterior, save_power, save_replay_info)
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_non_overlap_info,
                                   get_replay_times, get_replay_triggered_power,
@@ -80,11 +80,8 @@ def decode(data, replay_detector, use_likelihoods,
             replay_info, is_replay = get_replay_times(detector_results)
             results[data_source] = detector_results
             detector[data_source] = replay_detector
-            detector_results.sum("state", skipna=False).to_netcdf(
-                os.path.join(
-                    PROCESSED_DATA_DIR,
-                    f'{animal}_{day:02}_{epoch:02}.nc'),
-                group=f'{data_source}')
+            save_posterior(detector_results.sum("state", skipna=False),
+                           epoch_key, data_source)
 
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
@@ -104,7 +101,7 @@ def decode(data, replay_detector, use_likelihoods,
 
         # Save Data
         logging.info(f'Saving {data_source}...')
-        save_replay_data(data_source, epoch_key, replay_info,
+        save_replay_info(data_source, epoch_key, replay_info,
                          is_replay)
         data_sources.append(data_source)
         labels.append(is_replay.replay_number)
