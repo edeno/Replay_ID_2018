@@ -33,6 +33,7 @@ def main():
     environ['OPENBLAS_NUM_THREADS'] = str(NUM_THREADS)
     environ['NUMBA_NUM_THREADS'] = str(NUM_THREADS)
     environ['OMP_NUM_THREADS'] = str(NUM_THREADS)
+    environ['MKL_NUM_THREADS'] = str(NUM_THREADS)
     LOG_DIRECTORY = join(getcwd(), 'logs')
     makedirs(LOG_DIRECTORY,  exist_ok=True)
 
