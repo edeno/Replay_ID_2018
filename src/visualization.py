@@ -1,3 +1,5 @@
+import copy
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -333,8 +335,6 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
                           multiunit_detector_results=None,
                           sampling_frequency=1500,
                           offset=pd.Timedelta(0.250, 's'),
-                          position_metric='linear_distance',
-                          speed_metric='linear_speed',
                           is_relative_time=False,
                           show_data_types=None, show_result_types=None):
 
@@ -420,11 +420,11 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
         spike_results.acausal_posterior.plot(x='time', y='position',
                                              vmin=0.0, vmax=0.1, ax=axes[1])
         axes[1].plot(position_info.index.total_seconds(),
-                     position_info[position_metric].values,
+                     position_info.linear_position.values,
                      linewidth=3, linestyle='--', color='white')
         axes[1].set_title('')
         max_df = (data['position_info']
-                  .groupby('arm_name')[position_metric].max())
+                  .groupby('arm_name').linear_position.max())
         min_time = np.asarray(spike_results.time.min())
         for arm_name, max_position in max_df.iteritems():
             axes[1].axhline(max_position, color='grey',
@@ -432,7 +432,7 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
             axes[1].text(min_time, max_position - 5, arm_name, color='white',
                          fontsize=11, verticalalignment='top')
         min_df = (data['position_info']
-                  .groupby('arm_name')[position_metric].min())
+                  .groupby('arm_name').linear_position.min())
         for arm_name, min_position in min_df.iteritems():
             axes[1].axhline(min_position, color='grey',
                             linestyle='-', linewidth=1)
@@ -443,11 +443,11 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
         multiunit_results.acausal_posterior.plot(
             x='time', y='position', vmin=0.0, robust=True, ax=axes[2])
         axes[2].plot(position_info.index.total_seconds(),
-                     position_info[position_metric].values,
+                     position_info.linear_position.values,
                      linewidth=3, linestyle='--', color='white')
         axes[2].set_title('')
         max_df = (data['position_info']
-                  .groupby('arm_name')[position_metric].max())
+                  .groupby('arm_name').linear_position.max())
         min_time = np.asarray(spike_results.time.min())
         for arm_name, max_position in max_df.iteritems():
             axes[2].axhline(max_position, color='grey',
@@ -455,7 +455,7 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
             axes[2].text(min_time, max_position - 5, arm_name, color='white',
                          fontsize=11, verticalalignment='top')
         min_df = (data['position_info']
-                  .groupby('arm_name')[position_metric].min())
+                  .groupby('arm_name').linear_position.min())
         for arm_name, min_position in min_df.iteritems():
             axes[2].axhline(min_position, color='grey',
                             linestyle='-', linewidth=1)
@@ -473,7 +473,7 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
     if 'spikes' in show_data_types:
         place_bin_centers = replay_detector.place_bin_centers_.squeeze(axis=-1)
         place_bin_edges = replay_detector.place_bin_edges_.squeeze(axis=-1)
-        is_track = (np.histogram(data['position_info'][position_metric],
+        is_track = (np.histogram(data['position_info'].linear_position,
                                  bins=place_bin_edges)[0] > 0)
         place_fields = (replay_detector
                         ._spiking_likelihood
@@ -524,7 +524,7 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
 
     if 'speed' in show_data_types:
         ax = axes if n_plots == 1 else axes[ax_ind]
-        ax.plot(time, position_info[speed_metric].values, linewidth=3)
+        ax.plot(time, position_info.speed.values, linewidth=3)
         ax.axhline(4, color='black', linestyle='--')
         ax.set_ylabel('Speed (cm/s)')
 
@@ -598,3 +598,134 @@ def plot_linearized_place_fields(replay_detector, position_info,
     plt.xlim((place_bin_centers.min(), place_bin_centers.max()))
 
     return axes
+
+
+def plot_detector(time_ind, data, replay_detector, detector_results,
+                  figsize=(11, 6.0), data_source='sorted_spikes'):
+    fig, axes = plt.subplots(6, 1,
+                             figsize=figsize,
+                             sharex=True,
+                             constrained_layout=True,
+                             gridspec_kw={
+                                 'height_ratios': [1, 1, 3, 1, 3, 1]})
+    time = data['position_info'].iloc[time_ind].index / np.timedelta64(1, 's')
+
+    # axes 0
+    max_consensus = data['ripple_consensus_trace'].values.max()
+    start_time = data['spikes'].iloc[time_ind].index.min()
+    end_time = data['spikes'].iloc[time_ind].index.max()
+    consensus_ripple_trace = data['ripple_consensus_trace'].loc[
+        start_time:end_time]
+    consensus_ripple_trace_time = (consensus_ripple_trace.index /
+                                   np.timedelta64(1, 's'))
+
+    axes[0].fill_between(
+        time, np.ones_like(time) * max_consensus,
+        where=data['ripple_labels'].iloc[time_ind].values.squeeze() > 0,
+        color='#d95f02', zorder=-2, alpha=0.6, step='pre')
+    axes[0].fill_between(
+        consensus_ripple_trace_time,
+        consensus_ripple_trace.values.squeeze(), color='black')
+    axes[0].set_ylim((0, max_consensus))
+    axes[0].set_yticks((0, max_consensus))
+    axes[0].set_ylabel("Ripple\nPower")
+
+    # axes 1
+    multiunit_firing = (
+        data["multiunit_firing_rate"]
+        .reset_index(drop=True)
+        .set_index(
+            data["multiunit_firing_rate"].index / np.timedelta64(1, "s"))
+    )
+    max_multiunit = data["multiunit_firing_rate"].values.max()
+    axes[1].fill_between(
+        multiunit_firing.iloc[time_ind].index.values,
+        multiunit_firing.iloc[time_ind].values.squeeze(),
+        color="black",
+    )
+    axes[1].fill_between(
+        time, np.ones_like(time) * max_multiunit,
+        where=(data["multiunit_high_synchrony_labels"]
+               .iloc[time_ind].values.squeeze() > 0),
+        color='#7570b3', zorder=-2, alpha=0.6, step='pre')
+    axes[1].set_ylim((0, max_multiunit))
+    axes[1].set_yticks((0, max_multiunit))
+    axes[1].set_ylabel("Multiunit\nRate\n[spikes / s]")
+
+    # axes 2
+    if data_source == 'sorted_spikes':
+        place_fields = (
+            replay_detector._spiking_likelihood
+            .keywords['place_conditional_intensity']).squeeze()
+        place_field_max = np.argmax(place_fields, axis=0)
+        linear_position_order = place_field_max.argsort(axis=0).squeeze()
+        spike_time_ind, neuron_ind = np.nonzero(
+            np.asarray(data['spikes']
+                       .iloc[time_ind])[:, linear_position_order])
+        axes[2].set_ylabel('Cells')
+        n_units = data['spikes'].shape[1]
+    else:
+        spike_time_ind, neuron_ind = np.nonzero(
+            np.asarray(data['multiunit_spikes'].iloc[time_ind]))
+        n_units = data['multiunit_spikes'].shape[1]
+        axes[2].set_ylabel('Tet.')
+
+    axes[2].scatter(time[spike_time_ind], neuron_ind + 1,
+                    clip_on=False, s=10, color='black', marker='|',
+                    rasterized=True)
+    axes[2].set_ylim((1, n_units))
+    axes[2].set_yticks((1, n_units))
+    axes[2].fill_between(
+        time, np.ones_like(time) * n_units + 0.5, y2=0.5,
+        where=detector_results.isel(time=time_ind).replay_probability >= 0.8,
+        color='#1b9e77', zorder=-1, alpha=0.6, step='pre', clip_on=False)
+
+    # axes 3
+    (detector_results
+     .isel(time=time_ind)
+     .assign_coords(
+         time=lambda ds: ds.time /
+         np.timedelta64(1, 's'))
+     .replay_probability.plot(
+         x='time', ax=axes[3], color='black', clip_on=False))
+    axes[3].set_ylabel('Prob.')
+    axes[3].set_xlabel("")
+    axes[3].set_ylim((0, 1))
+
+    # axes 4
+    cmap = copy.copy(plt.get_cmap('bone_r'))
+    cmap.set_bad(color="lightgrey", alpha=1.0)
+    (detector_results
+     .isel(time=time_ind)
+     .assign_coords(
+         time=lambda ds: ds.time /
+         np.timedelta64(1, 's'))
+     .acausal_posterior
+     .sum('state')
+     .where(replay_detector.is_track_interior_)
+     .plot(x='time', y='position', ax=axes[4], cmap=cmap,
+           vmin=0.0, vmax=0.05))
+    axes[4].scatter(data['position_info'].iloc[time_ind].index /
+                    np.timedelta64(1, 's'),
+                    data['position_info'].iloc[time_ind].linear_position,
+                    s=1,
+                    color='magenta', clip_on=False)
+    axes[4].set_xlabel("")
+    max_position = np.ceil(
+        data['position_info'].linear_position.max()).astype(int)
+    axes[4].set_yticks((0.0, max_position))
+    axes[4].set_ylim((0.0, max_position))
+    axes[4].set_ylabel('Position [cm]')
+
+    # axes 5
+    speed = np.asarray(data['position_info'].iloc[time_ind].speed).squeeze()
+    axes[5].fill_between(time, speed, color='grey')
+    axes[5].axhline(4, color='black', linestyle='--', linewidth=1)
+    axes[5].set_ylabel('Speed\n[cm / s]')
+    max_speed = max(np.ceil(speed.max()).astype(int), 5.0)
+    axes[5].set_yticks((0.0, max_speed))
+    axes[5].set_ylim((0.0, max_speed))
+
+    axes[-1].set_xlabel('Time [s]')
+    axes[-1].xaxis.set_major_formatter(plt.FormatStrFormatter('%.1f'))
+    sns.despine(offset=5)

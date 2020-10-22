@@ -14,15 +14,15 @@ from replay_identification import ReplayDetector
 from replay_trajectory_classification import ClusterlessDecoder
 from src.load_data import load_data
 from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
-                            SAMPLING_FREQUENCY, USE_LIKELIHOODS,
-                            detector_parameters)
+                            PROCESSED_DATA_DIR, SAMPLING_FREQUENCY,
+                            USE_LIKELIHOODS, detector_parameters)
 from src.save_data import (save_non_overlap_info, save_overlap_info,
                            save_power, save_replay_data)
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   decode_replays, get_non_overlap_info,
                                   get_replay_times, get_replay_triggered_power,
                                   summarize_replays)
-from src.visualization import plot_behavior, plot_replay_with_data
+from src.visualization import plot_behavior, plot_detector
 from tqdm.autonotebook import tqdm
 
 logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
@@ -31,6 +31,7 @@ logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
 
 def decode(data, replay_detector, use_likelihoods,
            epoch_key, sampling_frequency):
+    animal, day, epoch = epoch_key
     is_training = data['position_info'].speed > 4
     decoder = ClusterlessDecoder(
         place_bin_size=replay_detector.place_bin_size,
@@ -52,6 +53,7 @@ def decode(data, replay_detector, use_likelihoods,
     labels = []
     infos = []
     results = {}
+    detector = {}
 
     for data_source, likelihoods in use_likelihoods.items():
         logging.info(f'Finding replays with {data_source}...')
@@ -64,32 +66,39 @@ def decode(data, replay_detector, use_likelihoods,
             is_replay = data['multiunit_high_synchrony_labels'].copy()
             detector_results = []
         else:
-            detector_results = replay_detector.predict(
-                speed=data['position_info'].speed,
-                position=data['position_info'].linear_position,
-                spikes=data['spikes'],
-                multiunit=data['multiunit'],
-                time=data['position_info'].index,
-                use_likelihoods=likelihoods,
-                use_smoother=True)
+            detector_results = (
+                replay_detector
+                .predict(
+                    speed=data['position_info'].speed,
+                    position=data['position_info'].linear_position,
+                    spikes=data['spikes'],
+                    multiunit=data['multiunit'],
+                    time=data['position_info'].index,
+                    use_likelihoods=likelihoods,
+                    use_smoother=True)
+                .drop(['causal_posterior', 'likelihood']))
             replay_info, is_replay = get_replay_times(detector_results)
             results[data_source] = detector_results
+            detector[data_source] = replay_detector
+            detector_results.sum("state", skipna=False).to_netcdf(
+                os.path.join(
+                    PROCESSED_DATA_DIR,
+                    f'{animal}_{day:02}_{epoch:02}_{data_source}.nc'))
 
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
                                                   data_source)
+
         if data_source in ['sorted_spikes', 'clusterless']:
-            latent_position = detector_results[
-                ['acausal_posterior', 'replay_probability']].sum('state')
-            decoder_results = [(latent_position
+            latent_position = [(detector_results.sum("state", skipna=False)
                                 .sel(time=slice(row.start_time, row.end_time)))
                                for row in replay_info.itertuples()]
         else:
-            decoder_results = decode_replays(
+            latent_position = decode_replays(
                 decoder, data, replay_info, sampling_frequency)
         logging.info(f'Summarizing replays with {data_source}...')
         replay_info = summarize_replays(
-            replay_info, decoder_results, data,
+            replay_info, latent_position, data,
             SAMPLING_FREQUENCY)
 
         # Save Data
@@ -129,20 +138,27 @@ def decode(data, replay_detector, use_likelihoods,
         save_non_overlap_info(
             non_overlap_info, epoch_key, data_source1, data_source2)
 
-    animal, day, epoch = epoch_key
-    for data_source, replay_info in zip(data_sources, infos):
-        logging.info(f'{data_source}...')
-        folder = os.path.join(FIGURE_DIR, f'replays_{data_source}')
-        os.makedirs(folder, exist_ok=True)
-        for replay_number in tqdm(replay_info.index):
-            fig, _ = plot_replay_with_data(
-                replay_number, data, replay_info, epoch_key, replay_detector,
-                results['sorted_spikes'], results['lfp_power'],
-                results['clusterless'], sampling_frequency=SAMPLING_FREQUENCY)
-            figure_name = f'{replay_number}.png'
-            figure_path = os.path.join(folder, figure_name)
-            plt.savefig(figure_path, bbox_inches='tight')
-            plt.close(fig)
+    # Plot each non-local chunk
+    time_index = np.arange(data['position_info'].shape[0])
+
+    for data_source, replay_info, is_replay in zip(
+            data_sources, infos, labels):
+        if data_source in ['sorted_spikes', 'clusterless']:
+            logging.info(f'Plotting {data_source}...')
+            folder = os.path.join(FIGURE_DIR, f'non_local_{data_source}')
+            os.makedirs(folder, exist_ok=True)
+            for replay_name, df in tqdm(replay_info.iterrows()):
+                start_ind, end_ind = time_index[is_replay == df.replay_number][
+                    [0, -1]]
+                time_ind = slice(start_ind - 125, end_ind + 125)
+                figsize = (20 * (end_ind - start_ind) / 1000, 7.5)
+                plot_detector(time_ind, data, detector[data_source],
+                              results[data_source],
+                              figsize=figsize, data_source=data_source)
+                figure_name = f'{replay_name}.png'
+                figure_path = os.path.join(folder, figure_name)
+                plt.savefig(figure_path, bbox_inches='tight')
+                plt.close(plt.gcf())
 
 
 def run_analysis(epoch_key, use_likelihoods):

@@ -267,6 +267,7 @@ def get_adhoc_multiunit(speed, tetrode_info, time_function):
     is_multiunit_high_synchrony = multiunit_high_synchrony_labels > 0
     multiunit_high_synchrony_times = multiunit_high_synchrony_times.assign(
         duration=lambda df: (df.end_time - df.start_time).dt.total_seconds())
+    multiunit_spikes = pd.DataFrame(multiunit_spikes, index=time)
 
     return dict(
         multiunit=multiunit,
