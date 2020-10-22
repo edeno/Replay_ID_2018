@@ -80,6 +80,7 @@ def decode(data, replay_detector, use_likelihoods,
             replay_info, is_replay = get_replay_times(detector_results)
             results[data_source] = detector_results
             detector[data_source] = replay_detector
+            logging.info("Saving posterior...")
             save_posterior(detector_results.sum("state", skipna=False),
                            epoch_key, data_source)
 
