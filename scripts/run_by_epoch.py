@@ -83,7 +83,8 @@ def decode(data, replay_detector, use_likelihoods,
             detector_results.sum("state", skipna=False).to_netcdf(
                 os.path.join(
                     PROCESSED_DATA_DIR,
-                    f'{animal}_{day:02}_{epoch:02}_{data_source}.nc'))
+                    f'{animal}_{day:02}_{epoch:02}.nc'),
+                group=f'{data_source}')
 
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
