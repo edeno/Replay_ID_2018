@@ -97,8 +97,7 @@ def decode(data, replay_detector, use_likelihoods,
                 decoder, data, replay_info, sampling_frequency)
         logging.info(f'Summarizing replays with {data_source}...')
         replay_info = summarize_replays(
-            replay_info, latent_position, data,
-            SAMPLING_FREQUENCY)
+            replay_info, latent_position, data)
 
         # Save Data
         logging.info(f'Saving {data_source}...')
