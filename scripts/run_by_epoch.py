@@ -91,7 +91,7 @@ def decode(data, replay_detector, use_likelihoods,
         if data_source in ['sorted_spikes', 'clusterless']:
             latent_position = [(results[data_source]
                                 .sel(time=slice(row.start_time, row.end_time)))
-                               for row in replay_info.itertuples()]
+                               for row in tqdm(replay_info.itertuples())]
         else:
             latent_position = decode_replays(
                 decoder, data, replay_info, sampling_frequency)
@@ -138,6 +138,7 @@ def decode(data, replay_detector, use_likelihoods,
             non_overlap_info, epoch_key, data_source1, data_source2)
 
     # Plot each non-local chunk
+    logging.info('Plot non-local detector figures...')
     time_index = np.arange(data['position_info'].shape[0])
 
     for data_source, replay_info, is_replay in zip(
