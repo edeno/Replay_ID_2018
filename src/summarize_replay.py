@@ -12,6 +12,7 @@ from ripple_detection.core import gaussian_smooth
 from scipy.ndimage.measurements import label
 from scipy.stats import linregress
 from spectral_connectivity import Connectivity, Multitaper
+from tqdm.autonotebook import tqdm
 
 logger = getLogger(__name__)
 
@@ -70,7 +71,7 @@ def summarize_replays(replay_info, decoder_results, data):
 
 def decode_replays(decoder, data, replay_info, use_smoother=True):
     decoder_results = []
-    for replay_number in replay_info.index:
+    for replay_number in tqdm(replay_info.index):
         start_time, end_time = replay_info.loc[
             replay_number, ['start_time', 'end_time']].values
         test_multiunit = data['multiunit'].sel(

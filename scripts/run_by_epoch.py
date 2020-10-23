@@ -91,7 +91,7 @@ def decode(data, replay_detector, use_likelihoods,
         if data_source in ['sorted_spikes', 'clusterless']:
             latent_position = [(results[data_source]
                                 .sel(time=slice(row.start_time, row.end_time)))
-                               for row in tqdm(replay_info.itertuples())]
+                               for row in replay_info.itertuples()]
         else:
             latent_position = decode_replays(
                 decoder, data, replay_info, sampling_frequency)
