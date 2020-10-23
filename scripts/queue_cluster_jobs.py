@@ -42,7 +42,7 @@ def main():
         ['-l h_rt=24:00:00', f'-pe omp {NUM_THREADS}',
          '-P braincom', '-notify', '-l mem_total=125G',
          '-v OPENBLAS_NUM_THREADS', '-v NUMBA_NUM_THREADS',
-         '-v OMP_NUM_THREADS'])
+         '-v OMP_NUM_THREADS', '-v MKL_NUM_THREADS'])
 
     args = get_command_line_arguments()
     if args.Animal is None and args.Day is None and args.Epoch is None:
