@@ -78,10 +78,10 @@ def decode(data, replay_detector, use_likelihoods,
                     use_smoother=True)
                 .drop(['causal_posterior', 'likelihood']))
             replay_info, is_replay = get_replay_times(detector_results)
-            results[data_source] = detector_results
+            results[data_source] = detector_results.sum("state", skipna=False)
             detector[data_source] = replay_detector
             logging.info("Saving posterior...")
-            save_posterior(detector_results.sum("state", skipna=False),
+            save_posterior(results[data_source],
                            epoch_key, data_source)
 
         logging.info(f'Classifying replays with {data_source}...')
@@ -89,7 +89,7 @@ def decode(data, replay_detector, use_likelihoods,
                                                   data_source)
 
         if data_source in ['sorted_spikes', 'clusterless']:
-            latent_position = [(detector_results.sum("state", skipna=False)
+            latent_position = [(results[data_source]
                                 .sel(time=slice(row.start_time, row.end_time)))
                                for row in replay_info.itertuples()]
         else:

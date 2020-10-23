@@ -701,7 +701,6 @@ def plot_detector(time_ind, data, replay_detector, detector_results,
          time=lambda ds: ds.time /
          np.timedelta64(1, 's'))
      .acausal_posterior
-     .sum('state')
      .where(replay_detector.is_track_interior_)
      .plot(x='time', y='position', ax=axes[4], cmap=cmap,
            vmin=0.0, vmax=0.05))
