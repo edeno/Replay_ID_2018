@@ -246,7 +246,7 @@ def main():
     client_params = dict(n_workers=args.n_workers,
                          threads_per_worker=args.threads_per_worker,
                          processes=True,
-                         memory_limit='7GB')
+                         memory_limit='10GB')
     with Client(**client_params) as client:
         logging.info(client)
         # Analysis Code
