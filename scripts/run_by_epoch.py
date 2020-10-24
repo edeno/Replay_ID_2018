@@ -146,7 +146,7 @@ def decode(data, replay_detector, use_likelihoods,
             logging.info(f'Plotting {data_source}...')
             folder = os.path.join(FIGURE_DIR, f'non_local_{data_source}')
             os.makedirs(folder, exist_ok=True)
-            for replay_name, df in tqdm(replay_info.iterrows()):
+            for replay_name, df in replay_info.iterrows():
                 start_ind, end_ind = time_index[is_replay == df.replay_number][
                     [0, -1]]
                 time_ind = slice(start_ind - 125, end_ind + 125)
