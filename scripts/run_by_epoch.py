@@ -149,7 +149,7 @@ def decode(data, replay_detector, use_likelihoods,
                 start_ind, end_ind = time_index[is_replay == df.replay_number][
                     [0, -1]]
                 time_ind = slice(start_ind - 125, end_ind + 125)
-                figsize = (20 * (end_ind - start_ind) / 1000, 7.5)
+                figsize = (35 * (end_ind - start_ind) / 1000, 7.5)
                 plot_detector(time_ind, data, detector[data_source],
                               results[data_source],
                               figsize=figsize, data_source=data_source)
