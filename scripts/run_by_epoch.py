@@ -23,7 +23,6 @@ from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
                                   get_replay_times, get_replay_triggered_power,
                                   summarize_replays)
 from src.visualization import plot_behavior, plot_detector
-from tqdm.autonotebook import tqdm
 
 logging.basicConfig(level='INFO', format='%(asctime)s %(message)s',
                     datefmt='%d-%b-%y %H:%M:%S')
