@@ -148,8 +148,11 @@ def decode(data, replay_detector, use_likelihoods,
             for replay_name, df in replay_info.iterrows():
                 start_ind, end_ind = time_index[is_replay == df.replay_number][
                     [0, -1]]
-                time_ind = slice(start_ind - 125, end_ind + 125)
-                figsize = (35 * (end_ind - start_ind) / 1000, 7.5)
+                start_ind = max(0, start_ind - 125)
+                end_ind = min(time_index[-1], end_ind + 125)
+                time_ind = slice(start_ind, end_ind)
+
+                figsize = (30 * (end_ind - start_ind) / 1000, 7.5)
                 plot_detector(time_ind, data, detector[data_source],
                               results[data_source],
                               figsize=figsize, data_source=data_source)
