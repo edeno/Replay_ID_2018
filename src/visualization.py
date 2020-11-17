@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.colors import ListedColormap, LogNorm
-
-from .parameters import USE_LIKELIHOODS
+from src.parameters import COLORS, USE_LIKELIHOODS
 
 HUE_ORDER = {
     'replay_motion_type': ['Away', 'Neither', 'Towards'],
@@ -18,13 +17,6 @@ _DEFAULT_DATA_TYPES = ['spikes', 'multiunit', 'lfps', 'bandpassed_lfps',
                        'speed']
 _DEFAULT_RESULT_TYPES = ['spikes', 'ripple_power', 'clusterless',
                          'ad_hoc_ripple', 'ad_hoc_multiunit']
-RESULT_COLORS_MAP = {
-    'spikes': '#ff7f0e',
-    'ripple_power': '#2ca02c',
-    'clusterless': '#d62728',
-    'ad_hoc_ripple': '#1f77b4',
-    'ad_hoc_multiunit': '#17becf',
-}
 
 
 def plot_data_source_counts(replay_info, kind='violin', **kwargs):
@@ -389,25 +381,25 @@ def plot_replay_with_data(replay_number, data, replay_info, epoch_key=None,
     if 'ad_hoc_ripple' in show_result_types:
         is_ripple = data['is_ripple'].loc[start_time:end_time].squeeze()
         axes[0].plot(time, is_ripple, label='Ad-hoc ripple', linewidth=3,
-                     color=RESULT_COLORS_MAP['ad_hoc_ripple'])
+                     color=COLORS['ad_hoc_ripple'])
     if 'ad_hoc_multiunit' in show_result_types:
         is_multiunit_high_synchrony = (data['is_multiunit_high_synchrony']
                                        .loc[start_time:end_time].squeeze())
         axes[0].plot(time, is_multiunit_high_synchrony,
                      label='Ad-hoc multiunit HSE', linewidth=3,
-                     color=RESULT_COLORS_MAP['ad_hoc_multiunit'])
+                     color=COLORS['ad_hoc_multiunit'])
     if 'ripple_power' in show_result_types:
         lfp_results.replay_probability.plot(
             x='time', label='ripple power', ax=axes[0], linewidth=3,
-            color=RESULT_COLORS_MAP['ripple_power'])
+            color=COLORS['ripple_power'])
     if 'spikes' in show_result_types:
         spike_results.replay_probability.plot(
             x='time', label='spikes', ax=axes[0], linewidth=3,
-            color=RESULT_COLORS_MAP['spikes'])
+            color=COLORS['spikes'])
     if 'clusterless' in show_result_types:
         multiunit_results.replay_probability.plot(
             x='time', label='clusterless', ax=axes[0], linewidth=3,
-            color=RESULT_COLORS_MAP['clusterless'])
+            color=COLORS['clusterless'])
 
     if len(show_result_types) > 0:
         axes[0].set_title('')
@@ -622,7 +614,7 @@ def plot_detector(time_ind, data, replay_detector, detector_results,
     axes[0].fill_between(
         time, np.ones_like(time) * max_consensus,
         where=data['ripple_labels'].iloc[time_ind].values.squeeze() > 0,
-        color='#d95f02', zorder=-2, alpha=0.6, step='pre')
+        color=COLORS['ad_hoc_ripple'], zorder=-2, alpha=0.6, step='pre')
     axes[0].fill_between(
         consensus_ripple_trace_time,
         consensus_ripple_trace.values.squeeze(), color='black')
@@ -647,7 +639,7 @@ def plot_detector(time_ind, data, replay_detector, detector_results,
         time, np.ones_like(time) * max_multiunit,
         where=(data["multiunit_high_synchrony_labels"]
                .iloc[time_ind].values.squeeze() > 0),
-        color='#7570b3', zorder=-2, alpha=0.6, step='pre')
+        color=COLORS['ad_hoc_multiunit'], zorder=-2, alpha=0.6, step='pre')
     axes[1].set_ylim((0, max_multiunit))
     axes[1].set_yticks((0, max_multiunit))
     axes[1].set_ylabel("Multiunit\nRate\n[spikes / s]")
@@ -678,7 +670,8 @@ def plot_detector(time_ind, data, replay_detector, detector_results,
     axes[2].fill_between(
         time, np.ones_like(time) * n_units + 0.5, y2=0.5,
         where=detector_results.isel(time=time_ind).replay_probability >= 0.8,
-        color='#1b9e77', zorder=-1, alpha=0.6, step='pre', clip_on=False)
+        color=COLORS[data_source], zorder=-1, alpha=0.6, step='pre',
+        clip_on=False)
 
     # axes 3
     (detector_results

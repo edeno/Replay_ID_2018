@@ -77,3 +77,10 @@ detector_parameters = {
     'spike_model_penalty': 0.5,
     'movement_state_transition_type': 'random_walk'
 }
+
+COLORS = {
+    'ad_hoc_ripple': '#d95f02',
+    'ad_hoc_multiunit': '#7570b3',
+    'sorted_spikes': '#e7298a',
+    'clusterless': '#1b9e77'
+}
