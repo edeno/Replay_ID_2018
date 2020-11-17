@@ -544,9 +544,45 @@ def get_replay_metrics(start_time, end_time, posterior, data):
         'max_ripple_consensus_trace_zscore': float(
             data['ripple_consensus_trace_zscore']
             .loc[start_time:end_time].max()),
+        'mean_ripple_consensus_trace_zscore': float(
+            data['ripple_consensus_trace_zscore']
+            .loc[start_time:end_time].mean()),
         'max_instantaneous_ripple_power_change': float(
             data['instantaneous_ripple_power_change']
             .loc[start_time:end_time].max()),
+        'mean_instantaneous_ripple_power_change': float(
+            data['instantaneous_ripple_power_change']
+            .loc[start_time:end_time].mean()),
+        'max_multiunit_zscore': float(
+            data['multiunit_rate_zscore']
+            .loc[start_time:end_time].max()),
+        'mean_multiunit_zscore': float(
+            data['multiunit_rate_zscore']
+            .loc[start_time:end_time].mean()),
+        'max_multiunit_firing_rate': float(
+            data['multiunit_firing_rate']
+            .loc[start_time:end_time].max()),
+        'mean_multiunit_firing_rate': float(
+            data['multiunit_firing_rate']
+            .loc[start_time:end_time].mean()),
+        'max_theta_zscore': float(
+            data['theta_power_zscore']
+            .loc[start_time:end_time].max()),
+        'mean_theta_zscore': float(
+            data['theta_power_zscore']
+            .loc[start_time:end_time].mean()),
+        'max_low_gamma_zscore': float(
+            data['low_gamma_power_zscore']
+            .loc[start_time:end_time].max()),
+        'mean_low_gamma__zscore': float(
+            data['low_gamma_power_zscore']
+            .loc[start_time:end_time].mean()),
+        'max_high_gamma_zscore': float(
+            data['high_gamma_power_zscore']
+            .loc[start_time:end_time].max()),
+        'mean_high_gamma__zscore': float(
+            data['high_gamma_power_zscore']
+            .loc[start_time:end_time].mean()),
     }
 
 
