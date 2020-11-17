@@ -8,7 +8,7 @@ from sys import exit
 
 from loren_frank_data_processing import (make_epochs_dataframe,
                                          make_neuron_dataframe)
-from src.parameters import ANIMALS, BRAIN_AREAS
+from src.parameters import ANIMALS
 
 
 def get_command_line_arguments():
@@ -48,10 +48,6 @@ def main():
     if args.Animal is None and args.Day is None and args.Epoch is None:
         epoch_info = make_epochs_dataframe(ANIMALS)
         neuron_info = make_neuron_dataframe(ANIMALS)
-        neuron_info = neuron_info.loc[
-            (neuron_info.type == 'principal') &
-            (neuron_info.numspikes > 100) &
-            neuron_info.area.isin(BRAIN_AREAS)]
         n_neurons = (neuron_info
                      .groupby(['animal', 'day', 'epoch'])
                      .neuron_id
@@ -62,7 +58,7 @@ def main():
         epoch_info = epoch_info.join(n_neurons)
         is_w_track = (epoch_info.environment
                       .isin(['TrackA', 'TrackB', 'WTrackA', 'WTrackB']))
-        epoch_keys = epoch_info[is_w_track & (epoch_info.n_neurons > 9)].index
+        epoch_keys = epoch_info[is_w_track & (epoch_info.n_neurons > 20)].index
     else:
         epoch_keys = [(args.Animal, args.Day, args.Epoch)]
 
