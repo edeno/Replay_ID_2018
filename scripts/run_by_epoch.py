@@ -8,14 +8,15 @@ from subprocess import PIPE, run
 
 import matplotlib.pyplot as plt
 import numpy as np
+import xarray as xr
 from dask.distributed import Client
 from loren_frank_data_processing.position import EDGE_ORDER, EDGE_SPACING
 from replay_identification import ReplayDetector
 from replay_trajectory_classification import ClusterlessDecoder
 from src.load_data import load_data
 from src.parameters import (FIGURE_DIR, MULTITAPER_PARAMETERS,
-                            SAMPLING_FREQUENCY, USE_LIKELIHOODS,
-                            detector_parameters)
+                            PROCESSED_DATA_DIR, SAMPLING_FREQUENCY,
+                            USE_LIKELIHOODS, detector_parameters)
 from src.save_data import (save_non_overlap_info, save_overlap_info,
                            save_posterior, save_power, save_replay_info)
 from src.summarize_replay import (add_epoch_info_to_dataframe, compare_overlap,
@@ -65,23 +66,36 @@ def decode(data, replay_detector, use_likelihoods,
             is_replay = data['multiunit_high_synchrony_labels'].copy()
             detector_results = []
         else:
-            detector_results = (
-                replay_detector
-                .predict(
-                    speed=data['position_info'].speed,
-                    position=data['position_info'].linear_position,
-                    spikes=data['spikes'],
-                    multiunit=data['multiunit'],
-                    time=data['position_info'].index,
-                    use_likelihoods=likelihoods,
-                    use_smoother=True)
-                .drop(['causal_posterior', 'likelihood']))
-            replay_info, is_replay = get_replay_times(detector_results)
-            results[data_source] = detector_results.sum("state", skipna=False)
-            detector[data_source] = replay_detector
-            logging.info("Saving posterior...")
-            save_posterior(results[data_source],
-                           epoch_key, data_source)
+            try:
+                results[data_source] = xr.open_dataset(
+                    os.path.join(
+                        PROCESSED_DATA_DIR, f'{animal}_{day:02}_{epoch:02}.nc'),
+                    group=f'{data_source}/posterior')
+                # Ensure that there are no inconsistencies in the time index
+                results[data_source] = results[data_source].assign_coords(
+                    time=data['position_info'].index)
+                detector[data_source] = replay_detector
+                replay_info, is_replay = get_replay_times(results[data_source])
+                logging.info('Found existing results. Loading...')
+            except (FileNotFoundError, OSError):
+                detector_results = (
+                    replay_detector
+                    .predict(
+                        speed=data['position_info'].speed,
+                        position=data['position_info'].linear_position,
+                        spikes=data['spikes'],
+                        multiunit=data['multiunit'],
+                        time=data['position_info'].index,
+                        use_likelihoods=likelihoods,
+                        use_smoother=True)
+                    .drop(['causal_posterior', 'likelihood']))
+                replay_info, is_replay = get_replay_times(detector_results)
+                results[data_source] = detector_results.sum(
+                    "state", skipna=False)
+                detector[data_source] = replay_detector
+                logging.info("Saving posterior...")
+                save_posterior(results[data_source],
+                               epoch_key, data_source)
 
         logging.info(f'Classifying replays with {data_source}...')
         replay_info = add_epoch_info_to_dataframe(replay_info, epoch_key,
