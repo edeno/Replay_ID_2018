@@ -58,38 +58,31 @@ def estimate_theta_power(time, tetrode_info, multitaper_params=None):
         tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
     tetrode_keys = tetrode_info.loc[is_brain_areas].index
 
-    lfps = get_LFPs(tetrode_keys, ANIMALS).reindex(time)
-    lfps = lfps.resample('2ms').mean().fillna(method='pad').reindex(time)
+    lfps = get_LFPs(tetrode_keys, ANIMALS)
 
     m = Multitaper(lfps.values, **multitaper_params,
                    start_time=lfps.index[0].total_seconds())
     c = Connectivity.from_multitaper(m)
-    dimension_names = ['time', 'frequency', 'tetrode']
-    power = c.power()
-    data_vars = {
-        'power': (dimension_names, power)}
-
-    n_samples = int(
-        multitaper_params['time_window_duration'] * SAMPLING_FREQUENCY)
-    index = lfps.index[np.arange(1, power.shape[0] * n_samples + 1, n_samples)]
-
     coordinates = {
-        'time': index,
-        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'time': pd.to_timedelta(c.time, unit='s'),
+        'frequency': c.frequencies,
         'tetrode': lfps.columns,
     }
 
-    power = (xr.Dataset(data_vars, coords=coordinates)
-             .sel(frequency=slice(0, 125)))
-    power = power.reindex(time=lfps.index).interpolate_na('time')
-
-    theta_power = (
-        power.sel(frequency=slice(4, 12)).mean('frequency')
-        .to_dataframe().unstack(level=0).interpolate())
+    dimension_names = ['time', 'frequency', 'tetrode']
+    data_vars = {
+        'power': (dimension_names, c.power())}
+    theta_power = (xr.Dataset(data_vars, coords=coordinates)
+                   .sel(frequency=slice(4, 12))
+                   .mean('frequency')
+                   .dropna('tetrode')
+                   .interp(time=time)
+                   .to_dataframe()
+                   .unstack(level=0))
 
     theta_power_change = theta_power.transform(
         lambda df: df / df.mean())
-    theta_power_zscore = np.log(theta_power).transform(
+    theta_power_zscore = theta_power.transform(
         lambda df: (df - df.mean()) / df.std())
 
     return dict(
@@ -106,42 +99,39 @@ def estimate_gamma_power(time, tetrode_info, multitaper_params=None):
         tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
     tetrode_keys = tetrode_info.loc[is_brain_areas].index
 
-    lfps = get_LFPs(tetrode_keys, ANIMALS).reindex(time)
-    lfps = lfps.resample('2ms').mean().fillna(method='pad').reindex(time)
+    lfps = get_LFPs(tetrode_keys, ANIMALS)
 
     m = Multitaper(lfps.values, **multitaper_params,
                    start_time=lfps.index[0].total_seconds())
     c = Connectivity.from_multitaper(m)
-    dimension_names = ['time', 'frequency', 'tetrode']
-    power = c.power()
-    data_vars = {
-        'power': (dimension_names, power)}
-
-    n_samples = int(
-        multitaper_params['time_window_duration'] * SAMPLING_FREQUENCY)
-    index = lfps.index[np.arange(1, power.shape[0] * n_samples + 1, n_samples)]
-
     coordinates = {
-        'time': index,
-        'frequency': c.frequencies + np.diff(c.frequencies)[0] / 2,
+        'time': pd.to_timedelta(c.time, unit='s'),
+        'frequency': c.frequencies,
         'tetrode': lfps.columns,
     }
 
-    power = (xr.Dataset(data_vars, coords=coordinates)
-             .sel(frequency=slice(0, 125)))
-    power = power.reindex(time=lfps.index).interpolate_na('time')
-
-    low_gamma_power = (
-        power.sel(frequency=slice(20, 50)).mean('frequency')
-        .to_dataframe().unstack(level=0).interpolate())
+    dimension_names = ['time', 'frequency', 'tetrode']
+    data_vars = {
+        'power': (dimension_names, c.power())}
+    low_gamma_power = (xr.Dataset(data_vars, coords=coordinates)
+                       .sel(frequency=slice(20, 50))
+                       .mean('frequency')
+                       .dropna('tetrode')
+                       .interp(time=time)
+                       .to_dataframe()
+                       .unstack(level=0))
     low_gamma_power_change = low_gamma_power.transform(
         lambda df: df / df.mean())
     low_gamma_power_zscore = np.log(low_gamma_power).transform(
         lambda df: (df - df.mean()) / df.std())
 
-    high_gamma_power = (
-        power.sel(frequency=slice(50, 125)).mean('frequency')
-        .to_dataframe().unstack(level=0).interpolate())
+    high_gamma_power = (xr.Dataset(data_vars, coords=coordinates)
+                        .sel(frequency=slice(50, 125))
+                        .mean('frequency')
+                        .dropna('tetrode')
+                        .interp(time=time)
+                        .to_dataframe()
+                        .unstack(level=0))
     high_gamma_power_change = high_gamma_power.transform(
         lambda df: df / df.mean())
     high_gamma_power_zscore = np.log(high_gamma_power).transform(

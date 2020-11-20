@@ -4,6 +4,7 @@ from os.path import abspath, dirname, join, pardir
 from loren_frank_data_processing import Animal
 
 SAMPLING_FREQUENCY = 500
+LFP_SAMPLING_FREQUENCY = 1500
 
 # Data directories and definitions
 ROOT_DIR = join(abspath(dirname(__file__)), pardir)
@@ -36,26 +37,26 @@ USE_LIKELIHOODS = OrderedDict(
 BRAIN_AREAS = ['CA1', 'CA2', 'CA3']
 
 _10Hz_Res = dict(
-    sampling_frequency=SAMPLING_FREQUENCY,
+    sampling_frequency=LFP_SAMPLING_FREQUENCY,
     time_window_duration=0.100,
     time_window_step=0.100,
     time_halfbandwidth_product=1,
 )
 _4Hz_Res = dict(
-    sampling_frequency=SAMPLING_FREQUENCY,
+    sampling_frequency=LFP_SAMPLING_FREQUENCY,
     time_window_duration=0.250,
     time_window_step=0.250,
     time_halfbandwidth_product=1,
 )
 _2Hz_Res = dict(
-    sampling_frequency=SAMPLING_FREQUENCY,
+    sampling_frequency=LFP_SAMPLING_FREQUENCY,
     time_window_duration=0.500,
     time_window_step=0.500,
     time_halfbandwidth_product=1,
 )
 
 _12Hz_Res = dict(
-    sampling_frequency=SAMPLING_FREQUENCY,
+    sampling_frequency=LFP_SAMPLING_FREQUENCY,
     time_window_duration=0.250,
     time_window_step=0.250,
     time_halfbandwidth_product=3,
