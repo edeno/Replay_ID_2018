@@ -55,7 +55,7 @@ def estimate_theta_power(time, tetrode_info, multitaper_params=None):
         multitaper_params = MULTITAPER_PARAMETERS['4Hz']
 
     is_brain_areas = (
-        tetrode_info.area.astype(str).str.upper().isin(['REFERENCE', 'CC']))
+        tetrode_info.area.astype(str).str.upper().isin(BRAIN_AREAS))
     tetrode_keys = tetrode_info.loc[is_brain_areas].index
 
     lfps = get_LFPs(tetrode_keys, ANIMALS)
