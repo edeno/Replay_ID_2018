@@ -122,7 +122,7 @@ def estimate_gamma_power(time, tetrode_info, multitaper_params=None):
                        .unstack(level=0))
     low_gamma_power_change = low_gamma_power.transform(
         lambda df: df / df.mean())
-    low_gamma_power_zscore = np.log(low_gamma_power).transform(
+    low_gamma_power_zscore = low_gamma_power.transform(
         lambda df: (df - df.mean()) / df.std())
 
     high_gamma_power = (xr.Dataset(data_vars, coords=coordinates)
