@@ -569,22 +569,22 @@ def get_replay_metrics(start_time, end_time, posterior, data):
             .loc[start_time:end_time].mean()),
         'max_theta_zscore': float(
             data['theta_power_zscore']
-            .loc[start_time:end_time].max()),
+            .loc[start_time:end_time].max().max()),
         'mean_theta_zscore': float(
             data['theta_power_zscore']
-            .loc[start_time:end_time].mean()),
+            .loc[start_time:end_time].mean().mean()),
         'max_low_gamma_zscore': float(
             data['low_gamma_power_zscore']
-            .loc[start_time:end_time].max()),
+            .loc[start_time:end_time].max().max()),
         'mean_low_gamma__zscore': float(
             data['low_gamma_power_zscore']
-            .loc[start_time:end_time].mean()),
+            .loc[start_time:end_time].mean().mean()),
         'max_high_gamma_zscore': float(
             data['high_gamma_power_zscore']
-            .loc[start_time:end_time].max()),
+            .loc[start_time:end_time].max().max()),
         'mean_high_gamma__zscore': float(
             data['high_gamma_power_zscore']
-            .loc[start_time:end_time].mean()),
+            .loc[start_time:end_time].mean().mean()),
     }
 
 
