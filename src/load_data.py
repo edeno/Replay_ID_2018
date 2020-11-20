@@ -208,9 +208,13 @@ def get_adhoc_ripple(epoch_key, tetrode_info, position_time):
         index=ripple_filtered_lfps.index,
         columns=['ripple_consensus_trace_zscore'])
 
-    instantaneous_ripple_power = get_envelope(ripple_filtered_lfps)**2
-    instantaneous_ripple_power_change = np.median(
-        instantaneous_ripple_power / instantaneous_ripple_power.mean(axis=0),
+    instantaneous_ripple_power = np.full_like(ripple_filtered_lfps, np.nan)
+    not_null = np.all(pd.notnull(ripple_filtered_lfps), axis=1)
+    instantaneous_ripple_power[not_null] = get_envelope(
+        np.asarray(ripple_filtered_lfps)[not_null])**2
+    instantaneous_ripple_power_change = np.nanmedian(
+        instantaneous_ripple_power /
+        np.nanmean(instantaneous_ripple_power, axis=0),
         axis=1)
     instantaneous_ripple_power_change = pd.DataFrame(
         instantaneous_ripple_power_change,
