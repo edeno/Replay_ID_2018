@@ -246,7 +246,8 @@ def get_adhoc_multiunit(speed, tetrode_info, time_function):
         columns=['firing_rate'])
     multiunit_rate_change = multiunit_firing_rate.transform(
         lambda df: df / df.mean())
-    multiunit_rate_zscore = zscore(multiunit_firing_rate, nan_policy='omit')
+    multiunit_rate_zscore = multiunit_firing_rate.transform(
+        lambda df: (df - df.mean()) / df.std())
 
     multiunit_high_synchrony_times = multiunit_HSE_detector(
         time, multiunit_spikes, speed.values, SAMPLING_FREQUENCY,
