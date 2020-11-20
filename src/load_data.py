@@ -159,10 +159,13 @@ def estimate_gamma_power(time, tetrode_info, multitaper_params=None):
 
 def get_ripple_consensus_trace(ripple_filtered_lfps, sampling_frequency):
     SMOOTHING_SIGMA = 0.004
-    ripple_consensus_trace = get_envelope(ripple_filtered_lfps)
+    ripple_consensus_trace = np.full_like(ripple_filtered_lfps, np.nan)
+    not_null = np.all(pd.notnull(ripple_filtered_lfps), axis=1)
+    ripple_consensus_trace[not_null] = get_envelope(
+        np.asarray(ripple_filtered_lfps)[not_null])
     ripple_consensus_trace = np.sum(ripple_consensus_trace ** 2, axis=1)
-    ripple_consensus_trace = gaussian_smooth(
-        ripple_consensus_trace, SMOOTHING_SIGMA, sampling_frequency)
+    ripple_consensus_trace[not_null] = gaussian_smooth(
+        ripple_consensus_trace[not_null], SMOOTHING_SIGMA, sampling_frequency)
     return np.sqrt(ripple_consensus_trace)
 
 
@@ -211,7 +214,7 @@ def get_adhoc_ripple(epoch_key, tetrode_info, position_time):
         index=ripple_filtered_lfps.index,
         columns=['ripple_consensus_trace'])
     ripple_consensus_trace_zscore = pd.DataFrame(
-        zscore(ripple_consensus_trace),
+        zscore(ripple_consensus_trace, nan_policy='omit'),
         index=ripple_filtered_lfps.index,
         columns=['ripple_consensus_trace_zscore'])
 
@@ -253,8 +256,7 @@ def get_adhoc_multiunit(speed, tetrode_info, time_function):
         columns=['firing_rate'])
     multiunit_rate_change = multiunit_firing_rate.transform(
         lambda df: df / df.mean())
-    multiunit_rate_zscore = np.log(multiunit_firing_rate).transform(
-        lambda df: (df - df.mean()) / df.std())
+    multiunit_rate_zscore = zscore(multiunit_firing_rate, nan_policy='omit')
 
     multiunit_high_synchrony_times = multiunit_HSE_detector(
         time, multiunit_spikes, speed.values, SAMPLING_FREQUENCY,
