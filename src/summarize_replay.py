@@ -78,7 +78,9 @@ def decode_replays(decoder, data, replay_info, use_smoother=True):
         decoder_results.append(
             decoder
             .predict(test_multiunit, time=test_multiunit.time)
-            .drop(['likelihood', 'causal_posterior']))
+            .drop(['likelihood', 'causal_posterior'])
+            .fillna(0.0)
+        )
 
     return decoder_results
 
