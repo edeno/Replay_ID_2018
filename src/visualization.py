@@ -603,7 +603,7 @@ def plot_detector(time_ind, data, replay_detector, detector_results,
     time = data['position_info'].iloc[time_ind].index / np.timedelta64(1, 's')
 
     # axes 0
-    max_consensus = data['ripple_consensus_trace'].values.max()
+    max_consensus = np.nanmax(np.asarray(data['ripple_consensus_trace']))
     start_time = data['spikes'].iloc[time_ind].index.min()
     end_time = data['spikes'].iloc[time_ind].index.max()
     consensus_ripple_trace = data['ripple_consensus_trace'].loc[
@@ -629,7 +629,7 @@ def plot_detector(time_ind, data, replay_detector, detector_results,
         .set_index(
             data["multiunit_firing_rate"].index / np.timedelta64(1, "s"))
     )
-    max_multiunit = data["multiunit_firing_rate"].values.max()
+    max_multiunit = np.nanmax(np.asarray(data["multiunit_firing_rate"]))
     axes[1].fill_between(
         multiunit_firing.iloc[time_ind].index.values,
         multiunit_firing.iloc[time_ind].values.squeeze(),
