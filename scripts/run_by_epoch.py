@@ -127,7 +127,7 @@ def decode(data, replay_detector, use_likelihoods,
                 MULTITAPER_PARAMETERS['4Hz'], window_offset=(-0.250, 0.250),
                 sampling_frequency=SAMPLING_FREQUENCY)
             save_power(power, epoch_key, data_source)
-        except ValueError:
+        except (ValueError, OSError):
             pass
 
     comb = itertools.combinations(zip(labels, infos, data_sources), 2)
