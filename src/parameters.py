@@ -82,6 +82,6 @@ detector_parameters = {
 COLORS = {
     'ad_hoc_ripple': '#d95f02',
     'ad_hoc_multiunit': '#7570b3',
-    'sorted_spikes': '#e7298a',
+    'sorted_spikes': '#e6ab02',
     'clusterless': '#1b9e77'
 }
