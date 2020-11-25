@@ -216,7 +216,7 @@ def run_analysis(epoch_key, use_likelihoods):
     decode(data, replay_detector, use_likelihoods,
            epoch_key, SAMPLING_FREQUENCY)
 
-    logging.info('Done...')
+    logging.info('Done...\n\n')
 
 
 def get_command_line_arguments():
