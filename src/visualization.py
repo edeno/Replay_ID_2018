@@ -681,7 +681,7 @@ def plot_detector(time_ind, data, replay_detector, detector_results,
          np.timedelta64(1, 's'))
      .replay_probability.plot(
          x='time', ax=axes[3], color='black', clip_on=False))
-    axes[3].set_ylabel('Prob.')
+    axes[3].set_ylabel('Prob.\nNon-Local')
     axes[3].set_xlabel("")
     axes[3].set_ylim((0, 1))
 
