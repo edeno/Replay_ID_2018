@@ -77,7 +77,7 @@ def decode(data, replay_detector, use_likelihoods,
                 detector[data_source] = replay_detector
                 replay_info, is_replay = get_replay_times(results[data_source])
                 logging.info('Found existing results. Loading...')
-            except (FileNotFoundError, OSError):
+            except (FileNotFoundError, OSError, KeyError):
                 detector_results = (
                     replay_detector
                     .predict(
