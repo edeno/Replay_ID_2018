@@ -459,12 +459,10 @@ def get_replay_metrics(start_time, end_time, posterior, data):
     spatial_coverage_percentage = (isin_hpd.sum("position") /
                                    n_position_bins).values
 
-    actual_positions = (data["position_info"]
-                        .loc[time_slice, ['x_position', 'y_position']]
-                        .values)
-    actual_track_segment_ids = (data["position_info"]
-                                .loc[time_slice, 'track_segment_id']
-                                .values.squeeze().astype(int))
+    actual_positions = np.asarray(
+        replay_position_info[['x_position', 'y_position']])
+    actual_track_segment_ids = (np.asarray(
+        replay_position_info['track_segment_id']).squeeze().astype(int))
 
     (replay_distance_from_actual_position,
      replay_distance_from_center_well) = calculate_replay_distance(
